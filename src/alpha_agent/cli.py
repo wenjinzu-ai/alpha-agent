@@ -7,10 +7,8 @@
 """
 import sys
 import uuid
-from typing import Optional
 
 from alpha_agent.utils.logger import logger
-
 
 BANNER = r"""
  ___                      _                         _
@@ -113,12 +111,18 @@ def _stream_agent(agent_loop, session_id: str, user_input: str):
     full_response = ""
     in_thinking = False
     tool_count = 0
+    seen_ai_ids = set()
 
     for chunk in agent_loop.stream(user_input, session_id=session_id):
         if "messages" in chunk and chunk["messages"]:
             last_msg = chunk["messages"][-1]
             if last_msg.type == "ai":
+                msg_id = getattr(last_msg, "id", None) or id(last_msg)
+
                 if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
+                    if msg_id in seen_ai_ids:
+                        continue
+                    seen_ai_ids.add(msg_id)
                     if not in_thinking:
                         print("\n  💭 思考中...", end="", flush=True)
                         in_thinking = True
@@ -126,24 +130,58 @@ def _stream_agent(agent_loop, session_id: str, user_input: str):
                         tool_count += 1
                         print(f" 🔧{tc['name']}", end="", flush=True)
                 elif last_msg.content:
+                    if msg_id in seen_ai_ids:
+                        continue
+                    seen_ai_ids.add(msg_id)
                     if in_thinking:
                         print(f"\n  ✅ 完成 {tool_count} 次工具调用\n")
                         print("小投 > ", end="", flush=True)
                         in_thinking = False
-                    if not full_response:
-                        full_response = last_msg.content
-                        print(last_msg.content, end="", flush=True)
+                    full_response = last_msg.content
+                    print(last_msg.content, end="", flush=True)
+                else:
+                    if msg_id in seen_ai_ids:
+                        continue
+                    seen_ai_ids.add(msg_id)
 
-    if not full_response and in_thinking:
+    if not full_response:
         state = agent_loop.graph.get_state(
             {"configurable": {"thread_id": session_id}}
         )
         messages = state.values.get("messages", [])
+
         for msg in reversed(messages):
-            if msg.type == "ai" and msg.content:
-                print()
-                print(msg.content)
+            if msg.type == "ai" and msg.content and not (
+                hasattr(msg, "tool_calls") and msg.tool_calls
+            ):
+                if in_thinking:
+                    print(f"\n  ✅ 完成 {tool_count} 次工具调用\n")
+                    in_thinking = False
+                full_response = msg.content
+                print("小投 > ", end="", flush=True)
+                print(msg.content, end="", flush=True)
                 break
+
+        if not full_response:
+            tool_outputs = []
+            for msg in reversed(messages):
+                if msg.type == "tool" and msg.content:
+                    tool_outputs.append(msg.content)
+                if len(tool_outputs) >= 2:
+                    break
+
+            if tool_outputs:
+                if in_thinking:
+                    print(f"\n  ✅ 完成 {tool_count} 次工具调用\n")
+                    in_thinking = False
+                combined = "\n\n".join(reversed(tool_outputs))
+                full_response = combined
+                print("小投 > ", end="", flush=True)
+                print(combined, end="", flush=True)
+
+    if in_thinking:
+        print(f"\n  ✅ 完成 {tool_count} 次工具调用")
+        in_thinking = False
 
 
 def _show_tasks():

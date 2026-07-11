@@ -5,65 +5,94 @@
   - 多任务派发（fan-out）：delegate_task(tasks=[...])
   - 后台执行：子 Agent 独立运行，主 Agent 不阻塞
   - 深度限制：子 Agent 不可再 delegate（防无限递归）
+  - 受限工具：子 Agent 只加载 Profile 指定的工具，不含 delegate_task
 
 Hermes 参考：
   - tools/delegate_tool.py: delegate_task schema + handler
   - tools/async_delegation.py: 后台子进程管理
 """
 import json
-from typing import Optional
+import os
+from string import Template
+
 from langchain_core.tools import tool
 
-from alpha_agent.infra.profile_loader import profile_loader
-from alpha_agent.utils.executor import write_temp_script, run_script_background
 from alpha_agent.config import settings
+from alpha_agent.infra.profile_loader import profile_loader
+from alpha_agent.utils.executor import run_script_background, write_temp_script
 from alpha_agent.utils.logger import logger
 
 MAX_DELEGATE_DEPTH = 2
 
-_SUB_AGENT_SCRIPT = '''import json
+_FORBIDDEN_TOOLS = {"delegate_task", "skill_manage"}
+
+_SUB_AGENT_SCRIPT = Template('''import json
 import sys
 import os
 
-sys.path.insert(0, r"{project_root}")
+sys.path.insert(0, r"$project_root")
 
 from alpha_agent.core.agent_loop import AgentLoop
 from alpha_agent.utils.logger import logger
 
 try:
-    profile = json.loads(r"""{profile_json}""")
-    goal = r"""{goal}"""
+    profile = json.loads(r"""$profile_json""")
+    goal = r"""$goal"""
+    delegate_depth = $delegate_depth
 
-    logger.info(f"[SubAgent] Starting with profile={profile.get('name', 'unknown')}, goal={goal[:100]}")
+    system_prompt = profile.get("system_prompt", "")
+    tool_names = profile.get("tools", [])
+    max_iterations = profile.get("max_iterations", 10)
 
-    agent = AgentLoop()
+    if delegate_depth >= $max_depth:
+        tool_names = [t for t in tool_names if t != "delegate_task"]
+
+    logger.info(
+        f"[SubAgent] Starting: profile={profile.get('name', 'unknown')}, "
+        f"tools={tool_names}, max_iterations={max_iterations}, "
+        f"depth={delegate_depth}, goal={goal[:100]}"
+    )
+
+    agent = AgentLoop(
+        system_prompt=system_prompt,
+        restricted_tool_names=tool_names,
+        max_steps=max_iterations,
+    )
     result = agent.invoke(goal)
 
     messages = result.get("messages", [])
     last_ai = ""
     for msg in reversed(messages):
         if hasattr(msg, "content") and msg.__class__.__name__ == "AIMessage":
-            last_ai = str(msg.content)
-            break
+            if not getattr(msg, "tool_calls", None):
+                last_ai = str(msg.content)
+                break
 
     if last_ai:
         print(last_ai)
     else:
-        print(json.dumps({"status": "completed", "message_count": len(messages)}))
+        for msg in reversed(messages):
+            if hasattr(msg, "content") and msg.__class__.__name__ == "AIMessage":
+                last_ai = str(msg.content)
+                break
+        if last_ai:
+            print(last_ai)
+        else:
+            print(json.dumps({"status": "completed", "message_count": len(messages)}))
 
 except Exception as e:
     logger.error(f"[SubAgent] Failed: {e}")
     print(json.dumps({"status": "failed", "error": str(e)}))
     sys.exit(1)
-'''
+''')
 
 
 @tool
 def delegate_task(
-    goal: Optional[str] = None,
+    goal: str | None = None,
     profile: str = "general",
-    context: Optional[str] = None,
-    tasks: Optional[list] = None,
+    context: str | None = None,
+    tasks: list | None = None,
     background: bool = True,
     max_iterations: int = 10,
 ) -> str:
@@ -167,11 +196,13 @@ def _delegate_single(
 
     profile_data = profile_loader.load(profile)
 
+    filtered_tools = [t for t in profile_data.get("tools", []) if t not in _FORBIDDEN_TOOLS]
+    profile_data = {**profile_data, "tools": filtered_tools}
+
     enriched_goal = goal
     if context:
         enriched_goal = f"{goal}\n\n背景信息: {context}"
 
-    import os
     project_root = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "..")
     )
@@ -179,10 +210,12 @@ def _delegate_single(
     profile_json = json.dumps(profile_data, ensure_ascii=False)
     goal_escaped = json.dumps(enriched_goal, ensure_ascii=False)
 
-    script_code = _SUB_AGENT_SCRIPT.format(
+    script_code = _SUB_AGENT_SCRIPT.substitute(
         project_root=project_root.replace("\\", "\\\\"),
         profile_json=profile_json,
         goal=goal_escaped,
+        delegate_depth=1,
+        max_depth=MAX_DELEGATE_DEPTH,
     )
 
     script_path = write_temp_script(script_code, prefix="delegate")
@@ -191,11 +224,14 @@ def _delegate_single(
         timeout=settings.pipeline_background_timeout,
     )
 
-    logger.info(f"[delegate_task] Created sub-agent: task_id={task_id}, profile={profile}")
+    logger.info(
+        f"[delegate_task] Created sub-agent: task_id={task_id}, "
+        f"profile={profile}, tools={filtered_tools}"
+    )
     return task_id
 
 
-def _find_nearest(target: str, candidates: list) -> Optional[str]:
+def _find_nearest(target: str, candidates: list) -> str | None:
     if not candidates:
         return None
     return min(candidates, key=lambda c: _levenshtein(target, c))

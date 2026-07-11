@@ -10,30 +10,28 @@ Hermes 参考：
   - agent/roles/: 角色定义目录
 """
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
-from alpha_agent.utils.logger import logger
-
-PROFILES_DIR = Path(__file__).parent.parent.parent / "profiles"
+PROFILES_DIR = Path(__file__).parent.parent.parent.parent / "profiles"
 
 
 class ProfileLoader:
     """Profile 加载器，管理 YAML Profile 的读取和缓存。"""
 
-    def __init__(self, profiles_dir: Optional[Path] = None):
+    def __init__(self, profiles_dir: Path | None = None):
         self._profiles_dir = profiles_dir or PROFILES_DIR
-        self._cache: Dict[str, dict] = {}
+        self._cache: dict[str, dict] = {}
 
-    def list_profiles(self) -> List[str]:
+    def list_profiles(self) -> list[str]:
         return sorted([
             p.stem
             for p in self._profiles_dir.glob("*.yaml")
             if not p.name.startswith("_")
         ])
 
-    def load(self, name: str) -> Dict[str, Any]:
+    def load(self, name: str) -> dict[str, Any]:
         if name in self._cache:
             return self._cache[name]
 
@@ -44,7 +42,7 @@ class ProfileLoader:
                 f"Available: {self.list_profiles()}"
             )
 
-        with open(profile_path, "r", encoding="utf-8") as f:
+        with open(profile_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         self._cache[name] = data
@@ -53,7 +51,7 @@ class ProfileLoader:
     def get_system_prompt(self, name: str) -> str:
         return self.load(name).get("system_prompt", "")
 
-    def get_tools(self, name: str) -> List[str]:
+    def get_tools(self, name: str) -> list[str]:
         return self.load(name).get("tools", [])
 
     def get_max_iterations(self, name: str) -> int:
@@ -62,7 +60,7 @@ class ProfileLoader:
     def get_display_name(self, name: str) -> str:
         return self.load(name).get("display_name", name)
 
-    def invalidate_cache(self, name: Optional[str] = None):
+    def invalidate_cache(self, name: str | None = None):
         if name:
             self._cache.pop(name, None)
         else:

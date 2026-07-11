@@ -1,5 +1,5 @@
-﻿from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+﻿
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 __version__ = "0.3.0"
 
@@ -24,21 +24,27 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
-    redis_password: Optional[str] = None
+    redis_password: str | None = None
     redis_enabled: bool = False
 
-    tushare_token: Optional[str] = None
+    tushare_token: str | None = None
+
+    tavily_api_key: str | None = None
+    bing_api_key: str | None = None
+    bocha_api_key: str | None = None
+    search_proxy: str | None = None
+    searxng_url: str | None = None
 
     llm_provider: str = "openai"
-    llm_api_key: Optional[str] = None
-    llm_base_url: Optional[str] = None
+    llm_api_key: str | None = None
+    llm_base_url: str | None = None
     llm_model: str = "gpt-4o-mini"
     llm_temperature: float = 0.3
     llm_enabled: bool = False
 
     default_analysis_timeout: int = 60
 
-    agent_max_steps: int = 15
+    agent_max_steps: int = 30
     terminal_default_timeout: int = 180
     execute_code_default_timeout: int = 300
     pipeline_background_timeout: int = 600

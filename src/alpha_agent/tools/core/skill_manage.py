@@ -1,18 +1,18 @@
-﻿"""skill_manage 工具 —— 技能全生命周期管理。
+﻿"""skill_manage 工具 —— 技能全生命周期管理（渐进式加载）。
 
-借鉴 Hermes 的 skill_manager_tool.py 设计：
-  - create: 创建新技能
-  - patch: 精确替换文本片段
-  - edit: 完整编辑技能内容
-  - fork: 从现有技能分叉
-  - retire: 退役技能
-  - delete: 删除技能
-  - list: 列出技能
-  - search: 搜索技能
+借鉴 Hermes 的 skills_tool + skill_manager_tool 设计：
+  渐进式加载（Progressive Disclosure）:
+    Tier 1: list/search → 只返回元数据 (name≤64, description≤1024)
+    Tier 2: view → 加载完整技能内容
+    Tier 3: view(ref_file) → 按需加载参考文件
+
+  生命周期管理:
+    create/patch/edit/fork/retire/delete
 
 Hermes 参考：
+  - tools/skills_tool.py: skills_list + skill_view (渐进式加载)
   - tools/skill_manager_tool.py: SKILL_MANAGE_SCHEMA
-  - tools/skills_tool.py: 技能加载、验证
+  - agent/skill_utils.py: 技能目录管理
 """
 from typing import Optional
 from langchain_core.tools import tool
@@ -36,21 +36,26 @@ def skill_manage(
     limit: int = 20,
     force: bool = False,
 ) -> str:
-    """技能全生命周期管理工具。
+    """技能全生命周期管理工具（渐进式加载）。
 
-    借鉴 Hermes 的 skill_manage，支持 create/patch/edit/fork/retire/delete/list/search。
+    借鉴 Hermes 的 skills_tool + skill_manager_tool 设计。
+
+    渐进式加载（Progressive Disclosure）:
+      Tier 1: list/search → 只返回元数据 (name + description + category)，不返回完整内容
+      Tier 2: view → 加载完整技能内容（仅在需要执行时加载）
 
     何时使用：
+    - 执行任务前先 search 查找已有技能，复用成熟方案
+    - 找到技能后用 view 加载完整内容再执行
     - 用户完成了复杂任务，想保存为可复用技能 → create
     - 需要修正技能中的某个步骤或命令 → patch
     - 需要完整重写技能内容 → edit
     - 从现有技能变体创建一个新技能 → fork
     - 技能不再适用 → retire
-    - 搜索已有技能 → search
     - 查看技能列表 → list
 
     Args:
-        action: 操作类型 (create/patch/edit/fork/retire/delete/list/search)
+        action: 操作类型 (create/patch/edit/fork/retire/delete/list/search/view)
         name: 技能名称（小写、连字符，如 "sync-stock-kline"）
         content: 技能内容（create/edit 时使用）
         category: 分类（如 "data-sync", "analysis", "maintenance"）
@@ -136,6 +141,22 @@ def skill_manage(
                 )
             return "\n".join(lines)
 
+        elif action == "view":
+            if not name:
+                return "错误: view 操作需要 name 参数"
+            skill = skill_store.get_skill(name)
+            if not skill:
+                return f"未找到技能: {name}"
+            lines = [
+                f"# {skill.name} (v{skill.version})",
+                f"分类: {skill.category}",
+                f"描述: {skill.description}",
+                f"使用次数: {skill.use_count}",
+                f"---",
+                skill.content,
+            ]
+            return "\n".join(lines)
+
         elif action == "search":
             if not query:
                 return "错误: search 操作需要 query 参数"
@@ -148,7 +169,7 @@ def skill_manage(
             return "\n".join(lines)
 
         else:
-            return f"错误: 未知操作 '{action}'。支持: create, patch, edit, fork, retire, delete, list, search"
+            return f"错误: 未知操作 '{action}'。支持: create, patch, edit, fork, retire, delete, list, search, view"
 
     except ValueError as e:
         return f"❌ 操作失败: {e}"

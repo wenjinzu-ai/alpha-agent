@@ -1,7 +1,7 @@
-﻿from sqlalchemy import String, Integer, Numeric, Text, Boolean, JSON, DateTime
+﻿from datetime import datetime
+
+from sqlalchemy import JSON, Boolean, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from datetime import datetime
-from typing import Optional
 
 from alpha_agent.infra.db.database import Base, TimestampMixin
 
@@ -382,8 +382,8 @@ class AgentSkill(Base, TimestampMixin):
     use_count: Mapped[int] = mapped_column(Integer, default=0, comment="使用次数")
     success_count: Mapped[int] = mapped_column(Integer, default=0, comment="成功次数")
     fail_count: Mapped[int] = mapped_column(Integer, default=0, comment="失败次数")
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, comment="最后使用时间")
-    last_patched_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, comment="最后修补时间")
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="最后使用时间")
+    last_patched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="最后修补时间")
 
     version: Mapped[int] = mapped_column(Integer, default=1, comment="版本号")
     pinned: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否置顶保护")
@@ -409,10 +409,23 @@ class AgentMemory(Base, TimestampMixin):
     importance: Mapped[float] = mapped_column(Numeric(4, 3), default=0.5, comment="重要性权重 (0-1)")
 
     access_count: Mapped[int] = mapped_column(Integer, default=0, comment="访问次数")
-    last_accessed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, comment="最后访问时间")
+    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="最后访问时间")
 
     source: Mapped[str] = mapped_column(String(32), default="conversation", comment="来源")
     status: Mapped[str] = mapped_column(String(16), default="active", index=True, comment="状态: active/archived/consolidated")
 
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, comment="过期时间")
-    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, comment="归档时间")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="过期时间")
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="归档时间")
+
+
+class AgentSession(Base, TimestampMixin):
+    """Agent 会话记录表，存储每轮对话"""
+    __tablename__ = "agent_sessions"
+    __table_args__ = {"comment": "Agent 会话记录表，存储每轮对话"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键ID")
+    session_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False, comment="会话ID")
+    user_message: Mapped[str] = mapped_column(Text, default="", comment="用户消息")
+    assistant_message: Mapped[str] = mapped_column(Text, default="", comment="Agent回复")
+    tool_calls = mapped_column(JSON, default=list, comment="工具调用记录（JSON）")
+    metadata_ = mapped_column("metadata", JSON, default=dict, comment="扩展元数据（JSON）")

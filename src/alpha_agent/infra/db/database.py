@@ -1,11 +1,12 @@
 ﻿from datetime import datetime
-from sqlalchemy import create_engine, DateTime, func
+
+from sqlalchemy import DateTime, create_engine, func
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
+    Session,
     mapped_column,
     sessionmaker,
-    Session,
 )
 
 from alpha_agent.config import settings
@@ -54,22 +55,6 @@ def get_db() -> Session:
 
 
 def init_db():
-    from alpha_agent.infra.db.models import (
-        Stock,
-        DailyKline,
-        FinancialReport,
-        AnalysisRecord,
-        Portfolio,
-        PortfolioPosition,
-        Etf,
-        EtfDailyKline,
-        DataSyncStatus,
-        ConversationHistory,
-        AgentAnalysisSession,
-        AgentAuditLog,
-        AgentSkill,
-        AgentMemory,
-    )
     Base.metadata.create_all(bind=engine)
     logger.info("数据库表初始化完成")
 
