@@ -1,4 +1,4 @@
-﻿[build-system]
+[build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -48,7 +48,7 @@ alpha-agent = "alpha_agent.cli:main"
 alpha-agent-api = "alpha_agent.api.__main__:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["alpha_agent", "alpha_agent.*"]
 
 [tool.pytest.ini_options]
