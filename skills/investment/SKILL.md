@@ -61,7 +61,6 @@ tools:
   - list_alerts
   - check_alerts
   - screen_stocks
-  - screen_etfs
   - get_factor_ranking
   - get_industry_rotation
   - list_available_factors
@@ -106,7 +105,7 @@ tools:
 - **实时行情**：用户问"现在多少钱"或"实时行情"时，调用 `get_realtime_quote`
 - **价格提醒**：用户问"到了xx价提醒我"时，调用 `add_price_alert`
 - **股票选股**：用户问"选什么股票好"、"推荐几只股票"、"有什么好股"时，调用 `screen_stocks`
-- **ETF选股**：用户问"选什么ETF好"、"推荐ETF"时，调用 `screen_etfs`
+- **ETF选股**：用户问"选什么ETF好"、"推荐ETF"时，调用 `screen_stocks` 并设置 `universe="etf"`
 - **因子排名**：用户问"哪些股票涨得最多"、"RSI最低的股票"时，调用 `get_factor_ranking`
 - **行业轮动**：用户问"现在什么行业好"、"行业轮动"、"哪个行业强"时，调用 `get_industry_rotation`
 - **因子列表**：用户问"有哪些因子"或"因子列表"时，调用 `list_available_factors`

@@ -690,6 +690,57 @@ def web_search(query: str, num_results: int = 5) -> str:
         return f"搜索失败: {e}"
 
 
+_FETCH_BREAKER = SearchCircuitBreaker()
+
+_FETCH_RETRYABLE_ERRORS = {
+    "timeout", "timed out", "connection", "reset", "refused",
+    "network", "unreachable", "resolve", "eof", "broken pipe",
+    "502", "503", "504",
+}
+
+_FETCH_MAX_RETRIES = 3
+_FETCH_BASE_DELAY = 1.5
+_FETCH_MAX_DELAY = 15.0
+
+
+def _is_fetch_retryable(error: Exception) -> bool:
+    error_str = str(error).lower()
+    return any(p in error_str for p in _FETCH_RETRYABLE_ERRORS)
+
+
+def _fetch_with_retry(url: str, timeout: int = 15, headers: dict | None = None) -> tuple[bytes, str]:
+    last_error = None
+    for attempt in range(_FETCH_MAX_RETRIES):
+        try:
+            with _urlopen_with_proxy(url, timeout=timeout, headers=headers) as resp:
+                raw = resp.read()
+            content_type = ""
+            if hasattr(resp, "headers"):
+                content_type = resp.headers.get("Content-Type", "")
+            return raw, content_type
+        except Exception as e:
+            last_error = e
+            if not _is_fetch_retryable(e):
+                raise
+            if attempt < _FETCH_MAX_RETRIES - 1:
+                import random as _rnd
+                delay = min(
+                    _FETCH_BASE_DELAY * (2 ** attempt) + _rnd.uniform(0, 1.0),
+                    _FETCH_MAX_DELAY,
+                )
+                logger.warning(
+                    f"[web_fetch] 请求失败 (第 {attempt + 1}/{_FETCH_MAX_RETRIES} 次), "
+                    f"{delay:.1f}s 后重试: {e}"
+                )
+                time.sleep(delay)
+            else:
+                logger.error(
+                    f"[web_fetch] 重试 {_FETCH_MAX_RETRIES} 次全部失败: {e}"
+                )
+                raise
+    raise last_error
+
+
 @tool
 def web_fetch(url: str, max_length: int = 5000) -> str:
     """抓取网页正文内容，用于深入了解搜索结果中的链接。
@@ -706,18 +757,29 @@ def web_fetch(url: str, max_length: int = 5000) -> str:
         url: 要抓取的网页 URL
         max_length: 返回内容的最大字符数（默认 5000）
     """
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        return f"无效的 URL: {url}"
+
+    if parsed.scheme not in ("http", "https"):
+        return f"不支持的协议: {parsed.scheme}，仅支持 http/https"
+
+    domain = parsed.netloc.split(":")[0]
+    if _FETCH_BREAKER.is_source_available(domain) is False:
+        return (
+            f"⚠️ 域名 {domain} 近期抓取连续失败，暂时不可用。\n"
+            "建议：稍后再试，或使用 web_search 搜索其他来源。"
+        )
+
     try:
         logger.info(f"[web_fetch] 抓取: {url}")
 
-        with _urlopen_with_proxy(url, timeout=15, headers={
+        raw, content_type = _fetch_with_retry(url, timeout=15, headers={
             "Accept": "text/html,application/xhtml+xml,application/pdf",
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        }) as resp:
-            raw = resp.read()
-
-        content_type = ""
-        if hasattr(resp, "headers"):
-            content_type = resp.headers.get("Content-Type", "")
+        })
 
         if "application/pdf" in content_type or raw[:4] == b"%PDF":
             return (
@@ -740,11 +802,59 @@ def web_fetch(url: str, max_length: int = 5000) -> str:
             text = text[:max_length] + f"\n\n... (已截断，原文共 {len(text)} 字符，可增大 max_length 获取更多)"
 
         if not text.strip():
+            _FETCH_BREAKER.record_failure(domain, ValueError("网页内容为空"))
             return f"网页内容为空: {url}"
 
+        _FETCH_BREAKER.record_success(domain)
         return f"网页内容 ({url}):\n\n{text}"
 
+    except urllib.error.HTTPError as e:
+        _FETCH_BREAKER.record_failure(domain, e)
+        if e.code in (401, 403):
+            return (
+                f"⚠️ 网页拒绝访问 (HTTP {e.code}): {url}\n"
+                "该网站需要认证或有访问限制，更换 URL 或使用 web_search 搜索其他来源。"
+            )
+        if e.code == 404:
+            return f"网页不存在 (HTTP 404): {url}"
+        if e.code == 429:
+            return (
+                f"⚠️ 请求过于频繁 (HTTP 429): {url}\n"
+                "该网站限流，请稍后再试或使用 web_search 搜索其他来源。"
+            )
+        if e.code >= 500:
+            return (
+                f"⚠️ 服务器错误 (HTTP {e.code}): {url}\n"
+                "目标服务器暂时不可用，建议稍后重试或使用 web_search 搜索其他来源。"
+            )
+        return f"网页抓取失败 (HTTP {e.code}): {e}"
+    except urllib.error.URLError as e:
+        _FETCH_BREAKER.record_failure(domain, e)
+        reason = str(e.reason) if hasattr(e, "reason") else str(e)
+        if "timed out" in reason.lower() or "timeout" in reason.lower():
+            return (
+                f"⚠️ 网页请求超时: {url}\n"
+                "目标网站响应过慢，建议使用 web_search 搜索其他来源。"
+            )
+        if "refused" in reason.lower() or "reset" in reason.lower():
+            return (
+                f"⚠️ 连接被拒绝: {url}\n"
+                "目标网站拒绝连接，可能已下线或有地域限制，建议使用 web_search 搜索其他来源。"
+            )
+        return f"网页抓取失败: {reason}"
+    except TimeoutError:
+        _FETCH_BREAKER.record_failure(domain, TimeoutError("请求超时"))
+        return (
+            f"⚠️ 网页请求超时: {url}\n"
+            "目标网站响应过慢，建议使用 web_search 搜索其他来源。"
+        )
     except Exception as e:
+        _FETCH_BREAKER.record_failure(domain, e)
+        if _is_auth_error(e):
+            return (
+                f"⚠️ 认证失败: {url}\n"
+                "该网站需要认证，请不要再次尝试 web_fetch 该 URL。"
+            )
         logger.warning(f"[web_fetch] 抓取失败: {e}")
         return f"网页抓取失败: {e}"
 

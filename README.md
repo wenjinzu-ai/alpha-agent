@@ -215,7 +215,7 @@ pytest --cov=alpha_agent
 | **数据查询** | `get_database_schema` | 查看数据库表结构 |
 | | `get_current_time` | 获取当前时间 |
 | | `web_search` | 搜索外部信息 |
-| **市场分析** | `screen_stocks` / `screen_etfs` | 全市场选股扫描 |
+| **市场分析** | `screen_stocks` | 全市场选股/ETF扫描 |
 | | `get_factor_ranking` | 因子排名 |
 | | `get_industry_rotation` | 行业轮动分析 |
 | | `get_stock_factors` | 获取股票因子数据 |

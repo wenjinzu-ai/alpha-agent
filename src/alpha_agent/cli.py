@@ -1,4 +1,4 @@
-﻿"""CLI 统一入口 —— 借鉴 Hermes：一个入口，自然语言驱动一切。
+"""CLI 统一入口 - 借鉴 Hermes：一个入口，自然语言驱动一切。
 
 设计原则：
 - 所有投资分析能力通过 AgentLoop + 自然语言完成
@@ -7,8 +7,20 @@
 """
 import sys
 import uuid
+from datetime import datetime
+
+from rich.console import Console, Group
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+from rich.markdown import Markdown
+from rich.live import Live
+from rich.align import Align
+from rich import box
 
 from alpha_agent.utils.logger import logger
+
+console = Console()
 
 BANNER = r"""
  ___                      _                         _
@@ -17,50 +29,136 @@ BANNER = r"""
  | || | | | (_| |  __/ |  | |_| | | | | |  __/ | | | |_
 |___|_| |_|\__, |\___|_|   \__|_| |_| |_|\___|_| |_|\__|
            |___/
-  智能投顾助手 · AgentLoop 持久循环
-  用自然语言提问，Agent 自主完成分析
 """
 
-HELP_TEXT = """
-内置命令:
-  /help, /h       显示帮助
-  /clear, /c      清空对话历史
-  /tasks          查看后台任务
-  /exit, /quit    退出
 
-使用示例:
-  你 > 帮我分析一下平安银行
-  你 > 今天市场整体怎么样
-  你 > 帮我选5只强势股
-  你 > 列出所有可用的技术因子
-  你 > 按20日涨跌幅排名
-  你 > 行业轮动分析
-  你 > 回测一下 000001.SZ 和 600519.SH
-  你 > 检查数据健康状态
-  你 > 同步K线数据
-"""
+def _input_box(prompt_label: str = "你") -> str:
+    """绘制矩形输入框，输入时即为完整矩形。"""
+    console.print()
+    console.print()
+    w = console.width - 4
+
+    top = Text()
+    top.append("  ╭", style="bold cyan")
+    top.append("─" * (w - 3), style="bold cyan")
+    top.append("╮", style="bold cyan")
+    console.print(top)
+
+    mid = Text()
+    mid.append("  │ ", style="bold cyan")
+    mid.append(prompt_label, style="bold green")
+    mid.append(" ❯", style="dim")
+    console.print(mid, end=" ")
+
+    console.print()
+
+    bot = Text()
+    bot.append("  ╰", style="bold cyan")
+    bot.append("─" * (w - 3), style="bold cyan")
+    bot.append("╯", style="bold cyan")
+    console.print(bot)
+
+    sys.stdout.write("[2A[8C")
+    sys.stdout.flush()
+
+    result = input().strip()
+
+    return result
+
+
+def _make_banner() -> Panel:
+    text = Text()
+    text.append(BANNER, style="bold cyan")
+    text.append("\n  智能投顾助手 · AgentLoop 持久循环\n", style="dim white")
+    text.append("  用自然语言提问，Agent 自主完成分析", style="dim white")
+    return Panel(
+        Align.center(text),
+        box=box.DOUBLE,
+        border_style="cyan",
+        padding=(1, 2),
+    )
+
+
+def _make_help() -> Panel:
+    content = []
+
+    cmd_table = Table(show_header=False, box=box.SIMPLE, padding=(0, 4))
+    cmd_table.add_column("cmd", style="bold yellow", width=18)
+    cmd_table.add_column("desc", style="white")
+    cmd_table.add_row("/help, /h", "显示帮助")
+    cmd_table.add_row("/clear, /c", "清空对话历史")
+    cmd_table.add_row("/tasks", "查看后台任务")
+    cmd_table.add_row("/exit, /quit, /q", "退出")
+
+    title = Text("内置命令", style="bold cyan underline")
+    content.append(title)
+    content.append(Text())
+    content.append(cmd_table)
+
+    content.append(Text())
+    content.append(Text())
+
+    ex_title = Text("使用示例", style="bold cyan underline")
+    content.append(ex_title)
+    content.append(Text())
+
+    examples = Table(show_header=False, box=box.SIMPLE, padding=(0, 2))
+    examples.add_column("prompt", style="dim", width=4)
+    examples.add_column("text", style="white")
+    for ex in [
+        "帮我分析一下平安银行",
+        "今天市场整体怎么样",
+        "帮我选5只强势股",
+        "列出所有可用的技术因子",
+        "按20日涨跌幅排名",
+        "行业轮动分析",
+        "回测一下 000001.SZ 和 600519.SH",
+        "检查数据健康状态",
+        "同步K线数据",
+    ]:
+        examples.add_row("▸", ex)
+    content.append(examples)
+
+    return Panel(Group(*content), title="帮助", border_style="green", padding=(1, 2))
+
+
+def _make_session_info(session_id: str) -> Panel:
+    text = Text()
+    text.append("会话: ", style="dim")
+    text.append(session_id[:8], style="bold green")
+    text.append("  |  ", style="dim")
+    text.append(datetime.now().strftime("%Y-%m-%d %H:%M"), style="dim")
+    return Panel(text, box=box.SIMPLE, border_style="blue", padding=(0, 2))
 
 
 def _run_interactive():
     """交互模式：启动 AgentLoop，持续对话。"""
-    print(BANNER)
-    print("🚀 AgentLoop 模式")
-    print()
+    console.print(_make_banner())
+    console.print()
 
     from alpha_agent.core.agent_loop import get_agent_loop
 
     agent_loop = get_agent_loop()
     session_id = str(uuid.uuid4())
 
-    print(f"会话: {session_id[:8]}")
-    print("你好！我是小投，你的智能投顾助手。有什么可以帮你的？")
-    print()
+    console.print(_make_session_info(session_id))
+
+    greeting = Panel(
+        "你好！我是[bold cyan]小投[/bold cyan]，你的智能投顾助手。有什么可以帮你的？\n"
+        "输入 [yellow]/help[/yellow] 查看命令，直接输入问题开始分析。",
+        box=box.SIMPLE,
+        border_style="green",
+        padding=(1, 2),
+    )
+    console.print(greeting)
+    console.print()
 
     while True:
         try:
-            user_input = input("你 > ").strip()
+            user_input = _input_box()
         except (KeyboardInterrupt, EOFError):
-            print("\n再见！")
+            console.print()
+            console.print(Panel("再见！", border_style="yellow"))
             break
 
         if not user_input:
@@ -68,31 +166,33 @@ def _run_interactive():
 
         if user_input.startswith("/"):
             if user_input in ("/exit", "/quit", "/q"):
-                print("再见！")
+                console.print(Panel("再见！", border_style="yellow"))
                 break
             if user_input in ("/help", "/h"):
-                print(HELP_TEXT)
+                console.print(_make_help())
                 continue
             if user_input in ("/clear", "/c"):
                 session_id = str(uuid.uuid4())
-                print(f"已清空对话历史，新会话: {session_id[:8]}")
+                console.print(Panel(
+                    f"已清空对话历史，新会话: [bold green]{session_id[:8]}[/bold green]",
+                    border_style="blue",
+                ))
                 continue
             if user_input == "/tasks":
                 _show_tasks()
                 continue
-            print(f"未知命令: {user_input}，输入 /help 查看帮助")
+            console.print(f"[yellow]未知命令: {user_input}，输入 /help 查看帮助[/yellow]")
             continue
 
-        print()
-        print("小投 > ", end="", flush=True)
+        console.print()
 
         try:
             _stream_agent(agent_loop, session_id, user_input)
         except Exception as e:
             logger.error(f"对话处理失败: {e}")
-            print(f"抱歉，处理你的问题时出错了: {e}")
-        print()
-        print()
+            console.print(Panel(f"抱歉，处理你的问题时出错了: {e}", border_style="red"))
+        console.print()
+        console.print()
 
 
 def _run_once(message: str):
@@ -103,7 +203,7 @@ def _run_once(message: str):
     session_id = str(uuid.uuid4())
 
     _stream_agent(agent_loop, session_id, message)
-    print()
+    console.print()
 
 
 def _stream_agent(agent_loop, session_id: str, user_input: str):
@@ -113,36 +213,64 @@ def _stream_agent(agent_loop, session_id: str, user_input: str):
     tool_count = 0
     seen_ai_ids = set()
 
-    for chunk in agent_loop.stream(user_input, session_id=session_id):
-        if "messages" in chunk and chunk["messages"]:
-            last_msg = chunk["messages"][-1]
-            if last_msg.type == "ai":
-                msg_id = getattr(last_msg, "id", None) or id(last_msg)
+    with Live(console=console, refresh_per_second=10, transient=False) as live:
+        status_text = Text()
+        status_text.append("小投", style="bold cyan")
+        status_text.append(" > ", style="dim")
 
-                if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
-                    if msg_id in seen_ai_ids:
-                        continue
-                    seen_ai_ids.add(msg_id)
-                    if not in_thinking:
-                        print("\n  💭 思考中...", end="", flush=True)
-                        in_thinking = True
-                    for tc in last_msg.tool_calls:
-                        tool_count += 1
-                        print(f" 🔧{tc['name']}", end="", flush=True)
-                elif last_msg.content:
-                    if msg_id in seen_ai_ids:
-                        continue
-                    seen_ai_ids.add(msg_id)
-                    if in_thinking:
-                        print(f"\n  ✅ 完成 {tool_count} 次工具调用\n")
-                        print("小投 > ", end="", flush=True)
-                        in_thinking = False
-                    full_response = last_msg.content
-                    print(last_msg.content, end="", flush=True)
-                else:
-                    if msg_id in seen_ai_ids:
-                        continue
-                    seen_ai_ids.add(msg_id)
+        for chunk in agent_loop.stream(user_input, session_id=session_id):
+            if "messages" in chunk and chunk["messages"]:
+                last_msg = chunk["messages"][-1]
+                if last_msg.type == "ai":
+                    msg_id = getattr(last_msg, "id", None) or id(last_msg)
+
+                    if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
+                        if msg_id in seen_ai_ids:
+                            continue
+                        seen_ai_ids.add(msg_id)
+                        if not in_thinking:
+                            in_thinking = True
+                        for tc in last_msg.tool_calls:
+                            tool_count += 1
+                            status_text = Text()
+                            status_text.append("  ", style="dim")
+                            status_text.append("🔍", style="bold blue")
+                            status_text.append(" 思考中", style="italic yellow")
+                            status_text.append(" · 已调用 ", style="dim")
+                            status_text.append(f"{tool_count}", style="bold cyan")
+                            status_text.append(" 个工具", style="dim")
+                            status_text.append(f"  [🔧 {tc['name']}]", style="magenta")
+                            live.update(status_text)
+                    elif last_msg.content:
+                        if msg_id in seen_ai_ids:
+                            continue
+                        seen_ai_ids.add(msg_id)
+                        if in_thinking:
+                            in_thinking = False
+                            live.stop()
+                            console.print()
+                            finish = Text()
+                            finish.append("  ✅ ", style="bold green")
+                            finish.append(f"完成 {tool_count} 次工具调用", style="white")
+                            console.print(finish)
+                            console.print()
+                            console.print("[bold cyan]小投[/bold cyan] [dim]>[/dim] ", end="")
+                            console.print(Markdown(last_msg.content))
+                            full_response = last_msg.content
+                        else:
+                            live.stop()
+                            console.print("[bold cyan]小投[/bold cyan] [dim]>[/dim] ", end="")
+                            console.print(Markdown(last_msg.content))
+                            full_response = last_msg.content
+                    else:
+                        if msg_id in seen_ai_ids:
+                            continue
+                        seen_ai_ids.add(msg_id)
+
+        if in_thinking:
+            live.stop()
+            console.print()
+            console.print(f"  ✅ 完成 {tool_count} 次工具调用")
 
     if not full_response:
         state = agent_loop.graph.get_state(
@@ -154,12 +282,9 @@ def _stream_agent(agent_loop, session_id: str, user_input: str):
             if msg.type == "ai" and msg.content and not (
                 hasattr(msg, "tool_calls") and msg.tool_calls
             ):
-                if in_thinking:
-                    print(f"\n  ✅ 完成 {tool_count} 次工具调用\n")
-                    in_thinking = False
                 full_response = msg.content
-                print("小投 > ", end="", flush=True)
-                print(msg.content, end="", flush=True)
+                console.print("[bold cyan]小投[/bold cyan] [dim]>[/dim] ", end="")
+                console.print(Markdown(msg.content))
                 break
 
         if not full_response:
@@ -171,17 +296,10 @@ def _stream_agent(agent_loop, session_id: str, user_input: str):
                     break
 
             if tool_outputs:
-                if in_thinking:
-                    print(f"\n  ✅ 完成 {tool_count} 次工具调用\n")
-                    in_thinking = False
                 combined = "\n\n".join(reversed(tool_outputs))
                 full_response = combined
-                print("小投 > ", end="", flush=True)
-                print(combined, end="", flush=True)
-
-    if in_thinking:
-        print(f"\n  ✅ 完成 {tool_count} 次工具调用")
-        in_thinking = False
+                console.print("[bold cyan]小投[/bold cyan] [dim]>[/dim] ", end="")
+                console.print(combined)
 
 
 def _show_tasks():
@@ -196,24 +314,44 @@ def _show_tasks():
     tasks = result.get("tasks", [])
 
     if total == 0:
-        print("当前没有后台任务")
+        console.print(Panel("当前没有后台任务", border_style="yellow"))
         return
 
-    print(f"后台任务列表（共{total}个，运行中{running}个）")
-    print("-" * 70)
+    table = Table(
+        title=f"后台任务列表（共 {total} 个，运行中 {running} 个）",
+        box=box.SIMPLE_HEAVY,
+        border_style="blue",
+        title_style="bold cyan",
+    )
+    table.add_column("状态", style="bold", width=6)
+    table.add_column("任务ID", style="dim", width=12)
+    table.add_column("状态", width=12)
+    table.add_column("耗时", width=8)
+    table.add_column("命令", style="white")
+
+    status_style = {
+        "running": ("🔄", "green"),
+        "completed": ("✅", "green"),
+        "failed": ("❌", "red"),
+        "killed": ("🛑", "red"),
+        "timeout": ("⏰", "yellow"),
+    }
+
     for t in tasks:
         tid = t.get("task_id", "")
         cmd = t.get("command", "")
         st = t.get("status", "")
         elapsed = t.get("elapsed", 0)
-        emoji = {
-            "running": "🔄",
-            "completed": "✅",
-            "failed": "❌",
-            "killed": "🛑",
-            "timeout": "⏰",
-        }.get(st, "⏳")
-        print(f"  {emoji} {tid}  [{st}]  {elapsed}s  {cmd}")
+        emoji, color = status_style.get(st, ("⏳", "dim"))
+        table.add_row(
+            f"[{color}]{emoji}[/{color}]",
+            tid,
+            f"[{color}]{st}[/{color}]",
+            f"{elapsed}s",
+            cmd,
+        )
+
+    console.print(table)
 
 
 def main():

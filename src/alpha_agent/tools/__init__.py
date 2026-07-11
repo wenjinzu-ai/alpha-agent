@@ -20,7 +20,6 @@ from alpha_agent.tools.portfolio.portfolio_tools import (
 )
 from alpha_agent.tools.analysis.screener_tools import (
     screen_stocks,
-    screen_etfs,
     get_factor_ranking,
     get_industry_rotation,
     list_available_factors,
@@ -84,7 +83,6 @@ def get_extended_tools() -> list:
     tools.append(get_industry_distribution)
     tools.append(get_rebalance_suggestion)
     tools.append(screen_stocks)
-    tools.append(screen_etfs)
     tools.append(get_factor_ranking)
     tools.append(get_industry_rotation)
     tools.append(list_available_factors)
@@ -134,7 +132,6 @@ __all__ = [
     "get_industry_distribution",
     "get_rebalance_suggestion",
     "screen_stocks",
-    "screen_etfs",
     "get_factor_ranking",
     "get_industry_rotation",
     "list_available_factors",

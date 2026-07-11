@@ -1,4 +1,4 @@
-﻿"""AgentLoop —— 单 Agent 持久循环，借鉴 Hermes 的核心架构。
+"""AgentLoop —— 单 Agent 持久循环，借鉴 Hermes 的核心架构。
 
 替代 Supervisor + 固定 Worker + 关键词路由。
 一个 Agent 拥有全部核心工具，自主决策调用链。
@@ -586,7 +586,7 @@ class AgentGraphBuilder:
                 for tc in response.tool_calls:
                     tc_name = tc.get("name", "")
                     tc_args = tc.get("args", {})
-                    action, _msg = guardrail.before_call(tc_name, tc_args)
+                    action, warning_msg = guardrail.before_call(tc_name, tc_args)
                     if action == "block":
                         blocked_names.append(tc_name)
                         logger.info(f"[AgentLoop] 第{step}步: 阻断工具调用 {tc_name}")

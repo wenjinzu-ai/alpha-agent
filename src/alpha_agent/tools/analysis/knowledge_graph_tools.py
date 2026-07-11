@@ -112,7 +112,7 @@ def _build_adjacency_list() -> Dict[str, List[str]]:
     return adj
 
 
-def find_join_path(from_table: str, to_table: str) -> List[str]:
+def __find_join_path(from_table: str, to_table: str) -> List[str]:
     """BFS 找最短 JOIN 路径"""
     adj = _build_adjacency_list()
     if from_table == to_table:
@@ -133,7 +133,7 @@ def find_join_path(from_table: str, to_table: str) -> List[str]:
     return []
 
 
-def generate_join_sql(path: List[str]) -> str:
+def __generate_join_sql(path: List[str]) -> str:
     """根据路径生成 JOIN SQL 片段"""
     if len(path) < 2:
         return ""
@@ -192,10 +192,10 @@ def find_cross_table_query(
 
         # 查找 JOIN 路径
         if len(tables) >= 2:
-            path = find_join_path(tables[0], tables[-1])
+            path = _find_join_path(tables[0], tables[-1])
             if path:
                 lines.append(f"\n**JOIN 路径**: {' → '.join(path)}")
-                join_sql = generate_join_sql(path)
+                join_sql = _generate_join_sql(path)
                 if join_sql:
                     lines.append(f"\n**JOIN SQL 片段**:\n```sql\n{join_sql}\n```")
             else:
@@ -239,14 +239,14 @@ def get_join_path(
     if not from_table or not to_table:
         return "请提供 from_table 和 to_table 参数"
 
-    path = find_join_path(from_table, to_table)
+    path = _find_join_path(from_table, to_table)
     if not path:
         return f"未找到 {from_table} 到 {to_table} 的 JOIN 路径"
 
     lines = [f"## JOIN 路径: {from_table} → {to_table}\n"]
     lines.append(f"**路径**: {' → '.join(path)}")
 
-    join_sql = generate_join_sql(path)
+    join_sql = _generate_join_sql(path)
     if join_sql:
         lines.append(f"\n```sql\n{join_sql}\n```")
 

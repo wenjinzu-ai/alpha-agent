@@ -42,26 +42,6 @@ def screen_stocks(
 
 
 @tool
-def screen_etfs(
-    top_n: int = 20,
-) -> str:
-    """全市场ETF选股扫描，根据技术面、动量、价值三维度综合评分排名。
-
-    Args:
-        top_n: 返回前N名，默认20
-    """
-    try:
-        screener = get_stock_screener()
-        results = screener.scan(universe="etf", top_n=top_n)
-        if not results:
-            return "未找到符合条件的ETF，请检查数据是否已同步。"
-        return screener.get_scan_report(results, top_n=top_n)
-    except Exception as e:
-        logger.error(f"ETF扫描失败: {e}")
-        return f"扫描失败: {e}"
-
-
-@tool
 def get_factor_ranking(
     factor_name: str = "change_pct_20d",
     universe: str = "stock",
