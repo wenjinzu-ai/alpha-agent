@@ -1,0 +1,231 @@
+{
+  "timestamp": "2026-07-11T12:55:09.910346",
+  "version": "0.3.0",
+  "total": 18,
+  "passed": 18,
+  "failed": 0,
+  "total_duration_ms": 242804,
+  "results": [
+    {
+      "scenario": "S1",
+      "name": "Daily Market Morning Brief",
+      "phase": "Phase 1",
+      "passed": true,
+      "duration_ms": 377,
+      "error": null,
+      "details": {
+        "pipeline_count": "7",
+        "steps": "5"
+      }
+    },
+    {
+      "scenario": "S2",
+      "name": "Stock Deep Dive Analysis",
+      "phase": "Phase 1",
+      "passed": true,
+      "duration_ms": 41,
+      "error": null,
+      "details": {
+        "fields": "['fundamental', 'technical', 'risk', 'report']"
+      }
+    },
+    {
+      "scenario": "S7",
+      "name": "Background Task Execution",
+      "phase": "Phase 1",
+      "passed": true,
+      "duration_ms": 5848,
+      "error": null,
+      "details": {
+        "bg_result": "后台任务已启动\ntask_id: task_8f2b5875\n命令: ping -n 5 127.0.0.1\n\n使用以下命令管理任务:\n  process(action='poll', task_id='task_8f2b5875')  # 查看进度\n  process(action='wait', task_id='task_8f2b5875')  # 等待完成\n  process(action",
+        "process_list": "后台任务列表（共1个，运行中1个）\n----------------------------------------------------------------------\n  🔄 task_8f2b5875  [running]  1.0s  ping -n 5 127.0.0.1",
+        "poll_result": "后台任务列表（共1个，运行中1个）\n----------------------------------------------------------------------\n  🔄 task_8f2b5875  [running]  4.0s  ping -n 5 127.0.0.1"
+      }
+    },
+    {
+      "scenario": "S6",
+      "name": "Data Health Check & Repair",
+      "phase": "Phase 1+2",
+      "passed": true,
+      "duration_ms": 631,
+      "error": null,
+      "details": {
+        "health_fields": "['table_scan', 'freshness_check', 'repair_suggestions', 'report']"
+      }
+    },
+    {
+      "scenario": "S3",
+      "name": "Multi-Factor Stock Screening",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 37,
+      "error": null,
+      "details": {
+        "steps": "4"
+      }
+    },
+    {
+      "scenario": "S4",
+      "name": "Factor Strategy Backtest",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 38,
+      "error": null,
+      "details": {
+        "steps": "4"
+      }
+    },
+    {
+      "scenario": "S5",
+      "name": "Portfolio Construction & Risk",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 6,
+      "error": null,
+      "details": {
+        "steps": "4"
+      }
+    },
+    {
+      "scenario": "S8",
+      "name": "Industry Rotation Analysis",
+      "phase": "Phase 1+2",
+      "passed": true,
+      "duration_ms": 202562,
+      "error": null,
+      "details": {
+        "rotation": "🔄 行业轮动分析\n==================================================\n分析时间: 2026-07-11 12:54:36\n\n📈 强势行业 (建议关注):\n  1. G60邮政业     动量分:  61.2 20日涨跌:   +7.4% 成分股: 4只\n  2. M73研究和试验发展 动量分:  60.7 20日涨跌:  +22.6% 成分股: 2",
+        "macro": "未找到宏观经济数据",
+        "aggregation": "行业聚合数据 (20260710)：\n\n==========================================================================================\n行业                   股票数      均涨跌幅      上涨      下跌       总成交额(亿)\n------------------------"
+      }
+    },
+    {
+      "scenario": "S9",
+      "name": "Peer Stock Comparison",
+      "phase": "Phase 1+2",
+      "passed": true,
+      "duration_ms": 95,
+      "error": null,
+      "details": {
+        "stock_tools_count": "5",
+        "comparison": "=== 股票对比报告（2/2只）===\n\n排名  代码        名称    综合分  评级    基本面  技术面  风控   建议仓位\n--------------------------------------------------------------------------------\n  1  000001.SZ   平安银行     58.4  中性     66.0   4"
+      }
+    },
+    {
+      "scenario": "S10",
+      "name": "Alert & Risk Monitoring",
+      "phase": "Phase 1+2",
+      "passed": true,
+      "duration_ms": 32040,
+      "error": null,
+      "details": {
+        "quote": "暂无 000001.SZ 的实时行情数据（可能未开盘或代码错误）",
+        "alert": "✅ 已添加告警：000001.SZ 价格上涨突破 999.99\n告警ID: alert_83a7fa61",
+        "alerts_count": "71",
+        "check": "000001.SZ 暂无告警触发，所有监控正常"
+      }
+    },
+    {
+      "scenario": "CHK1",
+      "name": "Tools Integrity Check",
+      "phase": "Phase 1+2",
+      "passed": true,
+      "duration_ms": 0,
+      "error": null,
+      "details": {
+        "total_tools": "50",
+        "core_tools": "15",
+        "extended_tools": "35",
+        "tool_names": "['terminal', 'process', 'execute_code', 'execute_pipeline', 'delegate_task', 'get_database_schema', 'get_current_time', 'web_search', 'generate_chart', 'generate_candlestick_chart']"
+      }
+    },
+    {
+      "scenario": "CHK2",
+      "name": "Pipeline Integrity Check",
+      "phase": "Phase 1+2",
+      "passed": true,
+      "duration_ms": 0,
+      "error": null,
+      "details": {
+        "pipeline_count": "7",
+        "pipelines": "['stock_analysis', 'market_overview', 'data_health_check', 'stock_screening', 'factor_backtest', 'portfolio_build', 'data_auto_repair']"
+      }
+    },
+    {
+      "scenario": "CHK3",
+      "name": "AgentLoop Build Check",
+      "phase": "Phase 1",
+      "passed": true,
+      "duration_ms": 1109,
+      "error": null,
+      "details": {
+        "graph_type": "CompiledStateGraph"
+      }
+    },
+    {
+      "scenario": "CHK4",
+      "name": "Learning Loop Check",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 3,
+      "error": null,
+      "details": {
+        "learning_loop": "review_and_maybe_learn",
+        "eval_score": "{'task_completion': 85, 'efficiency': 80, 'reusability': 75, 'innovation': 40, 'total': 280, 'should_create_skill': True, 'skill_name_hint': '', 'skill_description': '', 'summary': ''}"
+      }
+    },
+    {
+      "scenario": "CHK5",
+      "name": "Skill Store Check",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 7,
+      "error": null,
+      "details": {
+        "store_type": "SkillStore",
+        "search_result_count": "2"
+      }
+    },
+    {
+      "scenario": "CHK6",
+      "name": "Memory Store Check",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 9,
+      "error": null,
+      "details": {
+        "store_type": "MemoryStore",
+        "memory_count": "1",
+        "view_works": "True",
+        "search_works": "True"
+      }
+    },
+    {
+      "scenario": "CHK7",
+      "name": "Profile System Check",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 1,
+      "error": null,
+      "details": {
+        "loader_type": "ProfileLoader",
+        "profile_count": "5",
+        "profiles": "['backtest_engineer', 'data_engineer', 'fundamental_analyst', 'risk_controller', 'technical_analyst']",
+        "loaded_profile": "{'name': 'backtest_engineer', 'display_name': '回测工程师', 'icon': '⚙️', 'category': 'analysis', 'description': '专注策略回测，包括因子构建、回测执行、 绩效评估、参数优化、策略对比。\\n', 'system_prompt': '你是一位专业的回测工程师。\\n\\n你的职责：\\n1. 构建选股因子"
+      }
+    },
+    {
+      "scenario": "CHK8",
+      "name": "Delegate Task Check",
+      "phase": "Phase 2",
+      "passed": true,
+      "duration_ms": 0,
+      "error": null,
+      "details": {
+        "tool_exists": "True",
+        "tool_name": "delegate_task",
+        "tool_description": "动态创建专业子 Agent，加载 Profile 完成特定任务。\n\n    借鉴 Hermes 的 delegate_task，支持单任务委派和多任务并发派发（fan-out）。\n\n    何时使用："
+      }
+    }
+  ]
+}

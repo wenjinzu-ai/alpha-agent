@@ -1,0 +1,6 @@
+{
+    "include": ["alpha_agent"],
+    "extraPaths": ["alpha_agent"],
+    "pythonVersion": "3.10",
+    "typeCheckingMode": "basic"
+}

@@ -1,0 +1,64 @@
+﻿[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpha-agent"
+version = "0.1.0"
+description = "基于 LangGraph 的多 Agent 金融分析智能体"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Investment Agent Team" },
+]
+dependencies = [
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.2",
+    "langgraph>=0.2.0",
+    "langchain>=1.0.0",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "SQLAlchemy>=2.0.23",
+    "asyncpg>=0.29.0",
+    "redis>=5.0.1",
+    "alembic>=1.13.0",
+    "pandas>=2.1.0",
+    "numpy>=1.26.0",
+    "tushare>=1.4.6",
+    "akshare>=1.12.0",
+    "TA-Lib>=0.4.28",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "tenacity>=8.2.3",
+    "python-dateutil>=2.8.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+
+[project.scripts]
+alpha-agent = "alpha_agent.cli:main"
+alpha-agent-api = "alpha_agent.api.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["alpha_agent", "alpha_agent.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP"]

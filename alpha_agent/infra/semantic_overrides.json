@@ -1,0 +1,93 @@
+{
+  "daily_kline": {
+    "synonyms": {
+      "pct_chg": ["涨跌幅", "涨幅", "涨跌幅度", "变动百分比", "涨跌"],
+      "amount": ["成交额", "交易额", "交易金额", "成交金额"],
+      "vol": ["成交量", "交易量", "手数", "成交手数"],
+      "trade_date": ["交易日", "日期", "时间", "当天", "今日", "今天"],
+      "close": ["收盘价", "收盘"],
+      "open": ["开盘价", "开盘"],
+      "high": ["最高价", "最高点"],
+      "low": ["最低价", "最低点"],
+      "ts_code": ["股票代码", "代码", "标的"],
+      "pre_close": ["前收盘", "昨收"],
+      "change": ["涨跌额", "涨跌金额"]
+    },
+    "sample_values": {
+      "ts_code": ["000001.SZ", "600519.SH", "000858.SZ"],
+      "industry": ["银行", "电子", "医药", "食品饮料", "汽车", "计算机", "房地产"]
+    },
+    "filters": {
+      "today": "trade_date = (SELECT MAX(trade_date) FROM daily_kline)",
+      "this_week": "trade_date >= (SELECT MAX(trade_date)::date - INTERVAL '5 days' FROM daily_kline)",
+      "this_month": "trade_date >= (SELECT MAX(trade_date)::date - INTERVAL '30 days' FROM daily_kline)",
+      "active_stocks": "ts_code IN (SELECT ts_code FROM stocks WHERE is_active = true)"
+    },
+    "business_formulas": {
+      "涨跌家数": "COUNT(CASE WHEN pct_chg>0 THEN 1 END) AS 上涨家数, COUNT(CASE WHEN pct_chg<0 THEN 1 END) AS 下跌家数",
+      "平均涨跌幅": "AVG(pct_chg) AS 平均涨跌幅",
+      "涨跌停家数": "COUNT(CASE WHEN pct_chg>=9.9 THEN 1 END) AS 涨停家数, COUNT(CASE WHEN pct_chg<=-9.9 THEN 1 END) AS 跌停家数"
+    }
+  },
+  "stocks": {
+    "synonyms": {
+      "name": ["股票名称", "名称", "公司名"],
+      "industry": ["行业", "板块", "赛道", "行业分类"],
+      "area": ["地区", "区域", "所在地"],
+      "market": ["市场", "交易所"],
+      "ts_code": ["股票代码", "代码"],
+      "list_date": ["上市日期", "上市时间"]
+    }
+  },
+  "financial_reports": {
+    "synonyms": {
+      "total_revenue": ["营业收入", "营收", "收入", "营业总收入"],
+      "net_profit": ["净利润", "利润", "归母净利润"],
+      "eps": ["每股收益", "EPS"],
+      "roe": ["净资产收益率", "ROE"],
+      "gross_margin": ["毛利率"],
+      "net_margin": ["净利率"],
+      "end_date": ["报告期", "截止日期", "财务日期"],
+      "report_type": ["报告类型", "报表类型"]
+    }
+  },
+  "money_flow": {
+    "synonyms": {
+      "main_net_inflow": ["主力净流入", "主力资金", "主力净额"],
+      "super_large_net_inflow": ["超大单净流入", "超大单"],
+      "large_net_inflow": ["大单净流入", "大单"],
+      "medium_net_inflow": ["中单净流入", "中单"],
+      "small_net_inflow": ["小单净流入", "小单", "散户净流入"]
+    }
+  },
+  "stock_factors": {
+    "synonyms": {
+      "momentum_5d": ["5日动量", "短期动量", "近5日动量"],
+      "momentum_20d": ["20日动量", "月度动量", "近20日动量"],
+      "rsi_14": ["RSI", "相对强弱指标", "14日RSI"],
+      "composite_score": ["综合评分", "综合得分", "因子得分"]
+    }
+  },
+  "industry_aggregation": {
+    "synonyms": {
+      "avg_pct_chg": ["行业平均涨跌幅", "板块涨幅", "行业涨幅"],
+      "up_count": ["上涨家数", "上涨数量"],
+      "down_count": ["下跌家数", "下跌数量"],
+      "stock_count": ["股票数量", "成分股数量"]
+    }
+  },
+  "macro_data": {
+    "synonyms": {
+      "indicator": ["指标名称", "宏观指标", "指标"],
+      "period": ["统计周期", "时期", "月份"],
+      "value": ["数值", "指标值", "数据"]
+    }
+  },
+  "sentiment_data": {
+    "synonyms": {
+      "sentiment_score": ["情绪得分", "情绪指数", "舆情得分"],
+      "sentiment_type": ["情绪类型", "舆情类型"],
+      "heat_index": ["热度指数", "关注度", "热度"]
+    }
+  }
+}
