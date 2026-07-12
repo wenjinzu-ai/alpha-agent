@@ -40,7 +40,8 @@ class LLMService:
                 api_key=settings.llm_api_key,
                 base_url=settings.llm_base_url,
                 temperature=settings.llm_temperature,
-                timeout=30,
+                timeout=120,
+                max_tokens=4096,
             )
             self._enabled = True
             logger.info(f"LLM 初始化完成: provider={settings.llm_provider}, model={settings.llm_model}")

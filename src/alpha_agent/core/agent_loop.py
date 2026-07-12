@@ -48,6 +48,22 @@ from alpha_agent.utils.logger import logger
 if TYPE_CHECKING:
     from alpha_agent.core.context_engine import ContextEngine
 
+from alpha_agent.core.approval import (
+    ApprovalConfig,
+    ApprovalDecision,
+    ApprovalMode,
+    check_all_command_guards,
+)
+from alpha_agent.core.interrupt import is_interrupted
+from alpha_agent.core.budget_config import BudgetConfig, DEFAULT_BUDGET
+from alpha_agent.core.tool_guardrails import (
+    ToolCallGuardrailConfig,
+    ToolCallGuardrailController,
+    ToolGuardrailDecision,
+    toolguard_synthetic_result,
+    append_toolguard_guidance,
+)
+
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
@@ -134,84 +150,59 @@ attribute_analysis, manage_alerts, remember, get_current_time
 
 
 class ToolCallGuardrail:
-    """重复工具调用检测与阻断，借鉴 Hermes 的 ToolCallGuardrailController。
+    """工具调用护栏 - 封装 ToolCallGuardrailController。
 
-    三级响应：
-    1. 同一工具+参数连续失败 >= 2 次 → 警告（注入提示）
-    2. 同一工具+参数连续失败 >= 3 次 → 阻断（跳过该工具调用）
-    3. 同一工具总调用 >= 5 次（无论成败）→ 阻断（强制模型换策略）
+    支持精确失败、同工具失败、无进展追踪。
+    三级响应：allow / warn / halt。
+    阻断时生成合成结果 + 恢复提示，引导 LLM 换策略继续。
     """
 
-    EXACT_FAILURE_WARN_THRESHOLD = 2
-    EXACT_FAILURE_BLOCK_THRESHOLD = 3
-    SAME_TOOL_CALL_BLOCK_THRESHOLD = 5
-
     def __init__(self):
-        self._exact_failure_counts: dict[str, int] = {}
-        self._same_tool_call_counts: dict[str, int] = {}
-        self._blocked_tools: set[str] = set()
-
-    def _make_signature(self, tool_name: str, args: dict | None) -> str:
-        import json
-        try:
-            args_str = json.dumps(args or {}, sort_keys=True, ensure_ascii=False)
-        except (TypeError, ValueError):
-            args_str = str(args)
-        return f"{tool_name}:{args_str}"
+        self._controller = ToolCallGuardrailController(
+            ToolCallGuardrailConfig(
+                warnings_enabled=True,
+                hard_stop_enabled=True,
+                exact_failure_warn_after=2,
+                exact_failure_block_after=5,
+                same_tool_failure_warn_after=3,
+                same_tool_failure_halt_after=8,
+                no_progress_warn_after=2,
+                no_progress_block_after=5,
+            )
+        )
+        self._halt_decision: ToolGuardrailDecision | None = None
 
     def before_call(self, tool_name: str, args: dict | None) -> tuple[str, str | None]:
-        """检查工具调用是否应被阻断。
-
-        Returns:
-            (action, message): action 为 "allow"/"block"，message 为提示信息
-        """
-        if tool_name in self._blocked_tools:
-            return "block", (
-                f"工具 {tool_name} 已被阻断（调用次数过多或连续失败）。"
-                f"请基于已有信息总结回答，或换用其他工具。"
-            )
-
-        sig = self._make_signature(tool_name, args)
-        exact_fails = self._exact_failure_counts.get(sig, 0)
-        if exact_fails >= self.EXACT_FAILURE_BLOCK_THRESHOLD:
-            self._blocked_tools.add(tool_name)
-            return "block", (
-                f"工具 {tool_name} 相同调用已连续失败 {exact_fails} 次，已阻断。"
-                f"请基于已有信息总结回答，或换用其他工具。"
-            )
-
-        same_tool_calls = self._same_tool_call_counts.get(tool_name, 0)
-        if same_tool_calls >= self.SAME_TOOL_CALL_BLOCK_THRESHOLD:
-            self._blocked_tools.add(tool_name)
-            return "block", (
-                f"工具 {tool_name} 已被调用 {same_tool_calls} 次，已阻断。"
-                f"请基于已有信息总结回答，或换用其他工具。"
-            )
-
-        self._same_tool_call_counts[tool_name] = same_tool_calls + 1
-
-        if exact_fails >= self.EXACT_FAILURE_WARN_THRESHOLD:
-            return "allow", (
-                f"⚠️ 工具 {tool_name} 相同调用已失败 {exact_fails} 次，"
-                f"继续调用可能不会成功。请考虑换用其他工具或基于已有信息回答。"
-            )
-
+        decision = self._controller.before_call(tool_name, args or {})
+        if decision.action == "halt":
+            self._halt_decision = decision
+            return "block", decision.message
+        if decision.action == "warn":
+            return "allow", decision.message
         return "allow", None
 
-    def after_call(self, tool_name: str, args: dict | None, failed: bool) -> None:
-        """记录工具调用结果，更新失败计数。"""
-        sig = self._make_signature(tool_name, args)
-        if failed:
-            self._exact_failure_counts[sig] = self._exact_failure_counts.get(sig, 0) + 1
-        else:
-            self._exact_failure_counts.pop(sig, None)
+    def after_call(self, tool_name: str, args: dict | None, failed: bool, result: str | None = None) -> ToolGuardrailDecision | None:
+        return self._controller.after_call(
+            tool_name=tool_name, args=args or {},
+            result=None if failed else (result or ""),
+            failed=failed,
+        )
 
     @property
     def has_blocked_tools(self) -> bool:
-        return len(self._blocked_tools) > 0
+        return self._controller.has_blocked_tools
 
     def is_tool_blocked(self, tool_name: str) -> bool:
-        return tool_name in self._blocked_tools
+        return self._controller.is_tool_blocked(tool_name)
+
+    @property
+    def halt_decision(self) -> ToolGuardrailDecision | None:
+        return self._halt_decision
+
+    def synthetic_result(self) -> str:
+        if self._halt_decision:
+            return toolguard_synthetic_result(self._halt_decision)
+        return "{}"
 
 
 def _update_guardrail_from_history(guardrail: ToolCallGuardrail, messages: Sequence[BaseMessage]) -> None:
@@ -239,7 +230,7 @@ def _update_guardrail_from_history(guardrail: ToolCallGuardrail, messages: Seque
             marker in content
             for marker in ["失败", "不可用", "认证失败", "API Key", "请不要", "暂时不可用", "Error", "error"]
         )
-        guardrail.after_call(tool_name, tool_args, failed=is_failure)
+        guardrail.after_call(tool_name, tool_args, failed=is_failure, result=(None if is_failure else content))
 
 
 def _detect_tool_failures(messages: Sequence[BaseMessage]) -> str | None:
@@ -337,6 +328,8 @@ class AgentGraphBuilder:
         self._max_steps = max_steps_override or settings.agent_max_steps
         self._system_prompt_override = system_prompt_override
         self._restricted_tool_names = restricted_tool_names
+        self._approval_config = ApprovalConfig()
+        self._budget_config = DEFAULT_BUDGET
 
     def _ensure_compressor(self) -> ContextEngine:
         if self._compressor is not None:
@@ -484,6 +477,10 @@ class AgentGraphBuilder:
 
         _budget_map: dict[str, IterationBudget] = {}
         _guardrail_map: dict[str, ToolCallGuardrail] = {}
+        _approval_config = self._approval_config
+
+        def _get_approval_config():
+            return _approval_config
 
         def _build_context_prefix() -> str:
             now = datetime.now()
@@ -498,6 +495,11 @@ class AgentGraphBuilder:
                 _guardrail_map[session_key] = ToolCallGuardrail()
             return _guardrail_map[session_key]
 
+        _approval_config = self._approval_config
+
+        def _get_approval_config():
+            return _approval_config
+
         def agent_node(state: AgentState) -> dict[str, Any]:
             step = state.get("step_count", 0) + 1
             state_max = state.get("max_steps", max_steps)
@@ -510,6 +512,10 @@ class AgentGraphBuilder:
                 budget = IterationBudget(max_iterations=state_max)
                 budget.current = step - 1
                 _budget_map[budget_key] = budget
+
+            if is_interrupted():
+                logger.info("[AgentLoop] 收到中断信号，结束循环")
+                return {"messages": [AIMessage(content="[已中断] 分析已被用户中断。")]}
 
             if not budget.increment():
                 return {
@@ -539,9 +545,10 @@ class AgentGraphBuilder:
                 messages.append(HumanMessage(content=tool_failure_hint))
 
             guardrail_warnings = []
-            for tool_name in list(guardrail._blocked_tools):
+            if guardrail.halt_decision:
+                blocked_name = guardrail.halt_decision.tool_name
                 guardrail_warnings.append(
-                    f"工具 {tool_name} 已被阻断，不要再调用。"
+                    f"工具 {blocked_name} 已被阻断，不要再调用。"
                 )
             if guardrail_warnings:
                 messages.append(HumanMessage(
@@ -550,7 +557,17 @@ class AgentGraphBuilder:
 
             conversation_messages = list(state["messages"])
             raw_conversation = AgentGraphBuilder._messages_to_raw(conversation_messages)
-            if compressor.should_compress_preflight(raw_conversation):
+
+            should_compress = compressor.should_compress_preflight(raw_conversation)
+            if not should_compress and len(raw_conversation) > 50:
+                estimated = estimate_messages_tokens_rough(raw_conversation)
+                logger.warning(
+                    f"[ContextCompressor] 消息数 {len(raw_conversation)} 超过安全阈值(50), "
+                    f"估算 tokens: {estimated}, 强制触发压缩"
+                )
+                should_compress = True
+
+            if should_compress:
                 estimated = estimate_messages_tokens_rough(raw_conversation)
                 logger.info(
                     f"[ContextCompressor] 预检触发压缩 "
@@ -583,9 +600,24 @@ class AgentGraphBuilder:
             if tool_count > 0:
                 filtered_tool_calls = []
                 blocked_names = []
+                approval_cfg = _get_approval_config()
                 for tc in response.tool_calls:
                     tc_name = tc.get("name", "")
                     tc_args = tc.get("args", {})
+
+                    if tc_name in ("terminal", "execute_code"):
+                        cmd = tc_args.get("command", "") or tc_args.get("code", "")
+                        if cmd:
+                            decision = check_all_command_guards(cmd, budget_key, approval_cfg)
+                            if not decision.approved:
+                                if decision.require_user:
+                                    logger.info(f"[AgentLoop] 第{step}步: 需要用户审批: {decision.reason}")
+                                    blocked_names.append(f"{tc_name} (需审批: {decision.reason})")
+                                else:
+                                    logger.info(f"[AgentLoop] 第{step}步: 审批拒绝: {decision.reason}")
+                                    blocked_names.append(f"{tc_name} (已拒绝: {decision.reason})")
+                                continue
+
                     action, warning_msg = guardrail.before_call(tc_name, tc_args)
                     if action == "block":
                         blocked_names.append(tc_name)
@@ -662,6 +694,10 @@ class AgentGraphBuilder:
                     break
 
             if all_blocked and guardrail.has_blocked_tools:
+                halt = guardrail.halt_decision
+                if halt:
+                    logger.info(f"[AgentLoop] 第{step}步: 护栏 halt，生成合成结果: {halt.message}")
+                    return "finalize"
                 logger.info(f"[AgentLoop] 第{step}步: 所有待调用工具均被阻断，提前结束")
                 return END
 
@@ -686,10 +722,18 @@ class AgentGraphBuilder:
                 return {"messages": [AIMessage(content="抱歉，推理步数超限，未能完成分析。")]}
 
             messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
-            messages.append(HumanMessage(
-                content="你已达到迭代步数上限。请整理你的最终回答，基于已有信息给出完整分析。"
-                "如果信息不足请如实说明。不要再调用任何工具。"
-            ))
+            last_step = state.get("step_count", 0)
+            guardrail = _get_guardrail(f"step_{last_step}")
+            if guardrail.halt_decision:
+                synt = guardrail.synthetic_result()
+                messages.append(HumanMessage(
+                    content=f"工具调用被护栏阻止。合成结果: {synt}\n请基于已获取的信息，给出完整的分析回答。"
+                ))
+            else:
+                messages.append(HumanMessage(
+                    content="你已达到迭代步数上限。请整理你的最终回答，基于已有信息给出完整分析。"
+                    "如果信息不足请如实说明。不要再调用任何工具。"
+                ))
 
             model = llm_svc.model
 

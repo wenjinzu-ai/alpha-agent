@@ -40,6 +40,7 @@ from alpha_agent.tools.core.execute_code import execute_code
 from alpha_agent.tools.core.pipeline import execute_pipeline
 from alpha_agent.tools.core.skill_manage import skill_manage
 from alpha_agent.tools.core.delegate import delegate_task
+from alpha_agent.tools.core.clarify_tool import clarify_tool
 
 
 def get_core_tools() -> list:
@@ -49,6 +50,7 @@ def get_core_tools() -> list:
         execute_code,
         execute_pipeline,
         delegate_task,
+        clarify_tool,
         get_database_schema,
         get_current_time,
     ]

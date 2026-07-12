@@ -189,8 +189,12 @@ def _run_interactive():
         try:
             _stream_agent(agent_loop, session_id, user_input)
         except Exception as e:
-            logger.error(f"对话处理失败: {e}")
-            console.print(Panel(f"抱歉，处理你的问题时出错了: {e}", border_style="red"))
+            import traceback
+            error_detail = str(e)
+            if not error_detail or error_detail == "Connection error.":
+                error_detail = f"{type(e).__name__}: {e}"
+            logger.error(f"对话处理失败: {error_detail}\n{traceback.format_exc()}")
+            console.print(Panel(f"抱歉，处理你的问题时出错了: {error_detail}", border_style="red"))
         console.print()
         console.print()
 

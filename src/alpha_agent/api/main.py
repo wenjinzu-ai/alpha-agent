@@ -273,6 +273,75 @@ def delete_conversation(session_id: str):
         db.close()
 
 
+async def _handle_clarify(agent_loop, question, choices):
+    """处理 clarify 工具：将问题发送给用户，等待用户响应。"""
+    import asyncio
+    from alpha_agent.tools.core.clarify_tool import CLARIFY_RESPONSES
+
+    session_id = id(agent_loop)
+    CLARIFY_RESPONSES[session_id] = {"response": None, "event": asyncio.Event()}
+
+    yield _sse_event("clarify", {
+        "question": question,
+        "choices": choices or [],
+    })
+
+    try:
+        await asyncio.wait_for(
+            CLARIFY_RESPONSES[session_id]["event"].wait(),
+            timeout=120,
+        )
+        response = CLARIFY_RESPONSES[session_id].get("response", "")
+        if response:
+            yield _sse_event("clarify_result", {"response": response})
+    except asyncio.TimeoutError:
+        yield _sse_event("clarify_timeout", {"message": "用户未在 120 秒内响应"})
+
+
+@app.post("/api/clarify/respond", tags=["对话"])
+async def clarify_respond(session_id: str, response: str):
+    from alpha_agent.tools.core.clarify_tool import CLARIFY_RESPONSES
+
+    if session_id in CLARIFY_RESPONSES:
+        CLARIFY_RESPONSES[session_id]["response"] = response
+        CLARIFY_RESPONSES[session_id]["event"].set()
+        return {"status": "ok"}
+    return {"status": "not_found", "message": "没有待处理的 clarify 请求"}
+
+
+@app.post("/api/approve/command", tags=["审批"])
+async def approve_command(session_id: str, command: str, approved: bool = True):
+    from alpha_agent.core.approval import APPROVAL_PENDING
+    key = f"{session_id}:{command}"
+    if key in APPROVAL_PENDING:
+        APPROVAL_PENDING[key] = approved
+        return {"status": "ok", "approved": approved, "command": command}
+    return {"status": "not_found", "message": "没有待审批的命令"}
+
+
+@app.get("/api/approve/config", tags=["审批"])
+async def get_approval_config():
+    from alpha_agent.core.approval import ApprovalMode
+    return {
+        "modes": [m.value for m in ApprovalMode],
+        "current": "smart",
+        "hardline_patterns_count": 0,
+        "dangerous_patterns_count": 0,
+    }
+
+
+@app.post("/api/interrupt/{session_id}", tags=["对话"])
+async def interrupt_session(session_id: str):
+    from alpha_agent.core.interrupt import set_interrupt
+    from alpha_agent.core.agent_loop import get_agent_loop
+    try:
+        agent_loop = get_agent_loop()
+        set_interrupt(True)
+        return {"status": "interrupted", "session_id": session_id}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @app.get("/api/tracer/stats", tags=["追踪"])
 async def get_tracer_stats(days: int = 7):
     from alpha_agent.utils.tracer import get_tracer
