@@ -1,4 +1,4 @@
-﻿# Investment Agent
+# Alpha Agent
 
 > 借鉴 Hermes 核心能力，专注投资分析领域的 AgentLoop 智能体
 
@@ -84,7 +84,7 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DB=investment_agent
+POSTGRES_DB=alpha_agent
 ```
 
 ---
@@ -322,7 +322,7 @@ alpha-agent/
 ├── scripts/                  # 数据同步脚本
 ├── storage/                  # 数据库迁移
 ├── tests/                    # 测试
-├── ui/                       # 前端（React + TypeScript）
+├── frontend/                 # 前端（React + TypeScript + Vite）
 └── pyproject.toml
 ```
 

@@ -1,4 +1,4 @@
-﻿
+
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "Investment Agent"
+    app_name: str = "Alpha Agent"
     debug: bool = False
     log_level: str = "INFO"
 
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     postgres_port: int = 5433
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"
-    postgres_db: str = "investment_agent"
+    postgres_db: str = "alpha_agent"
 
     redis_host: str = "localhost"
     redis_port: int = 6379
