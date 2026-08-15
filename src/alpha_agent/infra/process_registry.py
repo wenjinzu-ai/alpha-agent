@@ -1,6 +1,6 @@
-﻿"""后台进程注册表 —— 管理子进程的完整生命周期。
+"""后台进程注册表 —— 管理子进程的完整生命周期。
 
-借鉴 Hermes 的 ProcessRegistry：
+ProcessRegistry：
 - 支持前台/后台执行
 - 后台进程可 poll/wait/kill/log
 - 超时自动终止（SIGTERM → 5s → SIGKILL）

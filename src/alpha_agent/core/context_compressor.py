@@ -1,8 +1,4 @@
-"""上下文压缩器 - 借鉴 Hermes 的 ContextCompressor，用 PG JSONB 替代 SQLite。
-
-Hermes 参考:
-  - agent/context_compressor.py: 结构化摘要模板、迭代摘要更新、Token 预算尾保护
-  - agent/context_compressor.py SUMMARY_PREFIX: "REFERENCE ONLY - 不要当作活跃指令"
+"""上下文压缩器 - ContextCompressor 设计，用 PG JSONB 替代 SQLite。
 
 核心改进（PG 优势）:
   - JSONB 存储结构化摘要（Resolved/Pending/Task 追踪），替代 SQLite 文本
@@ -133,7 +129,7 @@ def _classify_summary_content(text: str) -> Dict[str, Any]:
 class ContextCompressor(ContextEngine):
     """PG 驱动的上下文压缩器。
 
-    借鉴 Hermes 的 ContextCompressor 设计：
+    ContextCompressor 设计：
     - 结构化摘要模板（Resolved/Pending 问题追踪）
     - 迭代摘要更新（跨多次压缩保留信息）
     - Token 预算尾保护（按 token 而非固定消息数）

@@ -1,9 +1,9 @@
-"""AgentLoop —— 单 Agent 持久循环，借鉴 Hermes 的核心架构。
+"""AgentLoop —— 单 Agent 持久循环。
 
 替代 Supervisor + 固定 Worker + 关键词路由。
 一个 Agent 拥有全部核心工具，自主决策调用链。
 
-借鉴 Hermes 增强:
+核心增强:
   - ContextCompressor: 上下文压缩（PG JSONB）
   - IterationBudget: 迭代预算管理（按会话隔离）
   - Progressive Disclosure: 渐进式技能加载（Tier 1 → Tier 2）
@@ -315,7 +315,7 @@ _review_executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="review"
 class AgentGraphBuilder:
     """负责构建 LangGraph 图：工具加载、Prompt 组装、Checkpointer 管理、上下文压缩、预算管理。
 
-    借鉴 Hermes 的 ContextCompressor + IterationBudget 架构。
+    ContextCompressor + IterationBudget 架构。
     PG 增强：JSONB 结构化摘要、tsvector 全文搜索。
 
     Args:
@@ -552,7 +552,7 @@ class AgentGraphBuilder:
         def _collect_delegate_results() -> list[BaseMessage]:
             """从DelegateRegistry收集已完成的委派子Agent结果，返回ToolMessage列表。
 
-            借鉴Hermes的completion_queue设计：子Agent完成后结果自动注入对话上下文。
+            completion_queue设计：子Agent完成后结果自动注入对话上下文。
             新架构：子Agent在同进程内线程池运行，结果直接从内存获取。
             """
             result_msgs: list[BaseMessage] = []
@@ -603,7 +603,7 @@ class AgentGraphBuilder:
         def _auto_poll_background_tasks(messages: Sequence[BaseMessage]) -> list[HumanMessage]:
             """自动轮询后台任务和委派子Agent，仅注入已完成任务的结果。
 
-            借鉴Hermes的drain_notifications设计：
+            drain_notifications设计：
             - 子Agent完成后结果自动注入对话上下文（不阻塞主Agent）
             - 运行中的任务不做任何注入，避免LLM陷入反复poll的死循环
             - 同时处理ProcessRegistry后台进程和DelegateRegistry子Agent
@@ -763,7 +763,7 @@ class AgentGraphBuilder:
         def delegate_wait_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
             """委派等待节点：内部循环轮询，定期让主Agent决策。
 
-            借鉴Hermes的async_delegation设计：
+            async_delegation设计：
             - 子Agent在同进程内线程池运行，通过DelegateRegistry管理
             - 内部循环每3秒检查一次子Agent状态（纯轮询，不调LLM）
             - 每30秒（10轮）退出循环，注入状态摘要，回到agent_node让LLM决策
@@ -1376,7 +1376,7 @@ class AgentGraphBuilder:
 class AgentLoop:
     """Agent 执行循环 —— 对 AgentGraphBuilder 的薄封装。
 
-    借鉴 Hermes 的 conversation_loop 设计：
+    conversation_loop 设计：
     - 上下文压缩（ContextCompressor）
     - 迭代预算（IterationBudget，按会话隔离）
     - 后台学习（Background Review）
@@ -1438,7 +1438,7 @@ class AgentLoop:
     def _background_review(self, session_id: str, message: str, result: dict) -> None:
         """后台触发 Closed Learning Loop，不影响主流程。
 
-        借鉴 Hermes 的 background_review：每轮对话后异步 review。
+        background_review：每轮对话后异步 review。
         使用 ThreadPoolExecutor 避免线程无限增长。
         """
         try:

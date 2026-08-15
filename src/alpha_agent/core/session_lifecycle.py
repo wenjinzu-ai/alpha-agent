@@ -1,4 +1,4 @@
-﻿"""会话生命周期管理 —— 借鉴 Hermes 的会话管理能力。
+"""会话生命周期管理 —— 会话管理能力。
 
 在现有 SessionStore 基础上增强：
   1. 会话元数据管理（title, status, tags, step_count）
@@ -6,10 +6,6 @@
   3. 会话分支（branch）—— 从 checkpoint fork 新会话
   4. 压缩延续（compression continuation）—— 保存压缩摘要后继续
   5. 会话归档/清理
-
-Hermes 参考:
-  - gateway/gateway_web.py: 会话生命周期 (resume, branch, compression continuations)
-  - agent/conversation_loop.py: 会话管理
 """
 
 from __future__ import annotations
@@ -256,7 +252,7 @@ class SessionLifecycleManager:
     ) -> dict[str, Any]:
         """从父会话分支创建新会话。
 
-        借鉴 Hermes 的 branch 功能：从 checkpoint fork 新会话。
+        branch 功能：从 checkpoint fork 新会话。
         新会话继承父会话的 checkpoint 状态，但独立演进。
         """
         import uuid
@@ -282,7 +278,7 @@ class SessionLifecycleManager:
     ) -> dict[str, Any]:
         """压缩延续 —— 保存压缩摘要后继续会话。
 
-        借鉴 Hermes 的 compression continuation：
+        compression continuation：
         当上下文过长时，将历史压缩为摘要，标记压缩点，继续对话。
         """
         import json
@@ -332,7 +328,7 @@ class SessionLifecycleManager:
     def get_session_tree(self, session_id: str) -> dict[str, Any]:
         """获取会话树 —— 父会话和所有分支。
 
-        借鉴 Hermes 的会话树视图。
+        会话树视图。
         """
         session = self.get_session(session_id)
         if not session:

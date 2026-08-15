@@ -1,13 +1,9 @@
-﻿"""Profile 系统 —— 将 Worker 的 prompt+工具配置转为 YAML Profile。
+"""Profile 系统 —— 将 Worker 的 prompt+工具配置转为 YAML Profile。
 
-借鉴 Hermes 的 delegate_task 概念：
+delegate_task 概念：
   - 每个 Profile 包含 system_prompt、tools、max_iterations 等
   - delegate_task 时加载 Profile，创建专用子 Agent
   - 用 YAML 文件存储，便于版本控制和团队共享
-
-Hermes 参考：
-  - tools/delegate_tool.py: 子 Agent 创建时加载 roles/profile
-  - agent/roles/: 角色定义目录
 """
 from pathlib import Path
 from typing import Any

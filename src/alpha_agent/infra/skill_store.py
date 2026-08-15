@@ -1,12 +1,7 @@
-﻿"""Skill Store —— PG 驱动的 Skill 持久化与检索。
+"""Skill Store —— PG 驱动的 Skill 持久化与检索。
 
-借鉴 Hermes 的 skill_manage 设计（create/patch/edit/delete），
+skill_manage 设计（create/patch/edit/delete），
 但用 PostgreSQL 替代 Markdown 文件，支持 JSONB 查询和全文搜索。
-
-Hermes 参考：
-  - tools/skill_manager_tool.py: skill_manage(action=create/patch/edit/delete)
-  - tools/skills_tool.py: 技能扫描、加载、平台匹配
-  - agent/skill_utils.py: 技能目录管理
 """
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional

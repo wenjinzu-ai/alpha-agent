@@ -1,6 +1,6 @@
 -- 005_agent_memory.sql
 -- Agent 三层记忆表：Frozen / Episodic / SkillRef
--- 借鉴 Hermes 的 MEMORY.md / USER.md 设计，扩展为 PG 驱动的结构化记忆
+-- Agent 三层记忆表，MEMORY.md / USER.md 设计，PG 驱动的结构化记忆
 --
 -- 三层记忆模型：
 --   1. Frozen Memory  - 持久的用户画像、偏好、知识（长期不变）

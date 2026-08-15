@@ -1,4 +1,4 @@
-﻿"""execute_code 工具 —— 借鉴 Hermes 的 execute_code。
+"""execute_code 工具。
 
 在子进程中运行 Python 脚本，脚本内可调用其他工具。
 多步工作流压缩为一次调用，中间结果不进上下文。

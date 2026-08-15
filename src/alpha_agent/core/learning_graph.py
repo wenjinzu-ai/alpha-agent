@@ -1,4 +1,4 @@
-﻿"""学习图谱 —— 借鉴 Hermes agent/learning_graph.py。
+"""学习图谱。
 
 将"学习过程可视化"的图谱数据组装起来，供前端渲染。
 
@@ -6,10 +6,6 @@
   - 非预设、agent 创建或使用过的技能
   - 记忆块作为一等图谱节点
   - 技能关联（related_skills）+ 记忆-技能关联（词法重叠推导）
-
-Hermes 参考:
-  - agent/learning_graph.py: build_learning_graph, SkillNode, build_edges
-  - tools/skill_usage.py: load_usage
 """
 
 from __future__ import annotations
@@ -55,7 +51,7 @@ def _to_int_ts(value: Any) -> Optional[int]:
 def build_skill_nodes() -> dict[str, SkillNode]:
     """从 PG 的 agent_skills 表构建 SkillNode 列表。
 
-    借鉴 Hermes 的 build_skill_nodes，从 Markdown 文件改为从 PG 读取。
+    build_skill_nodes，从 Markdown 文件改为从 PG 读取。
     """
     nodes: dict[str, SkillNode] = {}
     try:
@@ -88,7 +84,7 @@ def build_skill_nodes() -> dict[str, SkillNode]:
 def build_edges(nodes: dict[str, SkillNode]) -> list[tuple[str, str]]:
     """从 related_skills 声明构建技能之间的边。
 
-    借鉴 Hermes 的 build_edges 逻辑。
+    build_edges 逻辑。
     """
     edges: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
@@ -107,7 +103,7 @@ def density_stats(
 ) -> dict[str, Any]:
     """计算图谱密度统计。
 
-    借鉴 Hermes 的 density_stats。
+    density_stats。
     """
     linked: set[str] = set()
     for a, b in edges:
@@ -133,7 +129,7 @@ def density_stats(
 def _memory_cards() -> list[dict[str, Any]]:
     """从 PG 的 agent_memory 表读取记忆卡片。
 
-    借鉴 Hermes 的 _memory_cards，从 Markdown 文件改为从 PG 读取。
+    _memory_cards，从 Markdown 文件改为从 PG 读取。
     """
     cards: list[dict[str, Any]] = []
     try:
@@ -173,7 +169,7 @@ def _memory_skill_edges(
     """推导记忆-技能之间的边。
 
     基于词法重叠：如果记忆内容包含技能名称或关键词，建立关联。
-    借鉴 Hermes 的 _memory_skill_edges。
+    _memory_skill_edges。
     """
     edges: list[tuple[str, str]] = []
     skill_meta = [(s, _tokenize(s.name), s.name.lower()) for s in skills]
@@ -198,7 +194,7 @@ def _memory_skill_edges(
 def build_learning_graph() -> dict[str, Any]:
     """构建完整的学习图谱数据。
 
-    借鉴 Hermes 的 build_learning_graph，返回供前端渲染的完整 payload。
+    build_learning_graph，返回供前端渲染的完整 payload。
 
     返回结构:
       {

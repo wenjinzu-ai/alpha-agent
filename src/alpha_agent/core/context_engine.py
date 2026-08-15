@@ -1,8 +1,4 @@
-"""可插拔上下文引擎 - 借鉴 Hermes 的 ContextEngine ABC。
-
-Hermes 参考:
-  - agent/context_engine.py: ContextEngine ABC
-  - agent/context_compressor.py: 内置 ContextCompressor 实现
+"""可插拔上下文引擎 - ContextEngine ABC。
 
 上下文引擎控制对话上下文的管理方式。内置 ContextCompressor 是默认实现，
 第三方引擎可通过插件系统替换。

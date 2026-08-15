@@ -1,8 +1,8 @@
 # Alpha Agent
 
-> 借鉴 Hermes 核心能力，专注投资分析领域的 AgentLoop 智能体
+> 专注投资分析领域的 AgentLoop 智能体
 
-基于 LangGraph 的 AgentLoop 持久循环架构，单 Agent 拥有全部核心工具，自主决策调用链。继承 Hermes 的 terminal/process/execute_code/delegate_task/skill_manage/Closed Learning Loop 核心能力，同时用投资领域专注构建专业深度。
+基于 LangGraph 的 AgentLoop 持久循环架构，单 Agent 拥有全部核心工具，自主决策调用链。内置 terminal/process/execute_code/delegate_task/skill_manage/Closed Learning Loop 核心能力，同时用投资领域专注构建专业深度。
 
 ---
 

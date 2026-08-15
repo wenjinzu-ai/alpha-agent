@@ -1,4 +1,4 @@
-﻿"""Curator 自动技能维护 —— 借鉴 Hermes agent/curator.py。
+"""Curator 自动技能维护。
 
 后台技能编排器，定期审查 agent 创建的技能，维护技能集合的健康状态。
 
@@ -12,10 +12,6 @@
   - 绝不自动删除，只归档（archived 状态可恢复）
   - pinned 技能跳过所有自动转换
   - 使用辅助模型，不触碰主会话的 prompt cache
-
-Hermes 参考:
-  - agent/curator.py: curator orchestrator
-  - tools/skill_usage.py: skill usage tracking
 """
 
 from __future__ import annotations
@@ -45,7 +41,7 @@ DEFAULT_CONSOLIDATE = False
 class CuratorState:
     """curator 状态管理器，持久化到 PG。
 
-    借鉴 Hermes 的 .curator_state JSON 文件，但用 PG 存储。
+    .curator_state JSON 文件，但用 PG 存储。
     """
 
     _instance: "CuratorState | None" = None
@@ -219,7 +215,7 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> dict[str, Any
     """应用自动状态转换: active → stale → archived。
 
     基于技能的 last_used_at 和 last_patched_at 时间戳。
-    借鉴 Hermes 的 apply_automatic_transitions 纯函数逻辑。
+    apply_automatic_transitions 纯函数逻辑。
 
     规则：
       - pinned 技能跳过所有转换
@@ -373,7 +369,7 @@ def _generate_consolidation_report(dry_run: bool = False) -> dict[str, Any]:
     """生成合并建议报告。
 
     分析 agent_created 技能，识别前缀聚类，建议合并策略。
-    借鉴 Hermes 的 LLM consolidation 提示词逻辑，但做纯启发式分析。
+    LLM consolidation 提示词逻辑，但做纯启发式分析。
     """
     clusters: dict[str, list[str]] = {}
 

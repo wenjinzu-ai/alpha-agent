@@ -1,11 +1,11 @@
-﻿"""Closed Learning Loop —— 每轮对话后后台 fork 重放，评分规则判断是否沉淀 Skill。
+"""Closed Learning Loop —— 每轮对话后后台 fork 重放，评分规则判断是否沉淀 Skill。
 
-借鉴 Hermes 的 learning_graph.py 和 background_review.py 设计：
+learning_graph.py 和 background_review.py 设计：
   - 对话结束后，后台 fork 一个新 Agent 来分析对话质量
   - 根据评分规则判断是否值得沉淀为 Skill
   - 采用 LangGraph StateGraph 构建学习循环
 
-评分规则 (借鉴 Hermes 的 review_prompt)：
+评分规则 (review_prompt)：
   1. 任务完成度：是否完成了用户要求？（0-100）
   2. 效率：是否有不必要的步骤？（0-100）
   3. 可复用性：这个任务流程是否可以复用？（0-100）
@@ -14,11 +14,6 @@
 沉淀条件：
   - 总分 >= 250 且 可复用性 >= 70 → 自动沉淀
   - 总分 >= 200 且 可复用性 >= 85 → 建议沉淀（把结果给用户确认）
-
-Hermes 参考：
-  - agent/learning_graph.py: 学习循环的状态图
-  - agent/background_review.py: 后台 review 的实现
-  - agent/review_prompt.py: 评分提示词
 """
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -56,7 +51,7 @@ class LearningLoopResult(TypedDict):
 def calculate_score_from_metrics(metrics: Dict[str, Any]) -> Optional[ReviewScore]:
     """根据对话指标计算评分。无有效 metrics 时返回 None，跳过评分。
 
-    借鉴 Hermes 的 review_prompt 评分逻辑。
+    review_prompt 评分逻辑。
     """
     if not metrics:
         return None
@@ -97,7 +92,7 @@ def calculate_score_from_metrics(metrics: Dict[str, Any]) -> Optional[ReviewScor
 def extract_tool_sequence(conversation_history: List[Dict]) -> List[Dict]:
     """从对话 history 中提取工具调用序列。
 
-    借鉴 Hermes 的 tool_call_aggregator，分析 Agent 执行模式。
+    tool_call_aggregator，分析 Agent 执行模式。
     """
     tool_calls = []
     for msg in conversation_history:
@@ -146,7 +141,7 @@ def generate_skill_content(
 ) -> str:
     """生成技能内容（SKILL.md 格式）。
 
-    借鉴 Hermes 的 SKILL.md 格式。
+    SKILL.md 格式。
     """
     tool_steps = "\n".join([
         f"  {i+1}. 调用 `{tc['name']}` 工具"
@@ -297,7 +292,7 @@ def review_and_maybe_learn(
 ) -> LearningLoopResult:
     """review_and_maybe_learn —— 对一次对话进行 Review，满足条件则沉淀 Skill。
 
-    借鉴 Hermes 的 background_review.py 的入口函数。
+    background_review.py 的入口函数。
     """
     if messages is None:
         messages = []

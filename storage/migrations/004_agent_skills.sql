@@ -1,6 +1,6 @@
 -- 004_agent_skills.sql
 -- Agent 技能表：结构化 Skill 存储，JSONB 索引 + 全文搜索
--- 借鉴 Hermes 的 skill_manage 设计，扩展为 PG 驱动
+-- Agent 技能表，skill_manage 设计，PG 驱动
 
 CREATE TABLE IF NOT EXISTS agent_skills (
     id              SERIAL PRIMARY KEY,

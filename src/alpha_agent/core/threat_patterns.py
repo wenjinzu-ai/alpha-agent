@@ -1,4 +1,4 @@
-﻿"""提示注入与威胁模式检测 —— 借鉴 Hermes 的 threat_patterns.py。
+"""提示注入与威胁模式检测。
 
 检测范围：
   - 经典提示注入
@@ -73,7 +73,7 @@ _PATTERNS: list[tuple[str, str, str]] = [
      "antiforensics_cleanup", "strict"),
 
     # ---- 环境变量窃取 ----
-    (r'(?:unset|export\s+-n)\s+(?:HERMES_|AGENT_|ALPHA_)',
+    (r'(?:unset|export\s+-n)\s+(?:AGENT_|ALPHA_)',
      "env_theft_unset", "strict"),
     (r'printenv|env\s*\|', "env_theft_printenv", "context"),
     (r'cat\s+(?:~?/\.(?:env|bashrc|zshrc|profile|config))',

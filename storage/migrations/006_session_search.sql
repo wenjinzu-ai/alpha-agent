@@ -1,6 +1,6 @@
 -- 006_session_search.sql
 -- 会话搜索与上下文压缩存储（PG tsvector 全文搜索）
--- 借鉴 Hermes 的 SQLite FTS5，用 PG tsvector 替代，功能更强
+-- 会话搜索，SQLite FTS5 改为 PG tsvector，功能更强
 
 -- 会话记录表（全文搜索）
 CREATE TABLE IF NOT EXISTS agent_sessions (

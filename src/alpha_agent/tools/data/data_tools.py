@@ -1,6 +1,6 @@
-﻿"""数据库 Schema 工具 —— get_database_schema。
+"""数据库 Schema 工具 —— get_database_schema。
 
-借鉴 Hermes：LLM 直接写 SQL 通过 execute_code 执行，无需 text2sql 翻译层。
+LLM 直接写 SQL 通过 execute_code 执行，无需 text2sql 翻译层。
 只保留 get_database_schema 让 LLM 了解表结构，SQL 由 LLM 自主生成。
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-﻿"""精细化工具调用护栏 —— 借鉴 Hermes agent/tool_guardrails.py。
+"""精细化工具调用护栏。
 
 核心改进：
   1. 幂等/变异工具分类 —— 区分只读工具和修改工具
@@ -6,10 +6,6 @@
   3. 同工具失败追踪 —— 不同参数但同工具连续失败 → 警告
   4. 无进展检测 —— 幂等工具返回相同结果 → 警告/阻断
   5. 结果哈希 —— 结构化结果比较，避免字符串误判
-
-Hermes 参考:
-  - agent/tool_guardrails.py: ToolCallGuardrailController, ToolCallSignature
-  - agent/tool_result_classification.py: file_mutation_result_landed
 """
 
 from __future__ import annotations
@@ -172,7 +168,7 @@ class ToolCallGuardrailConfig:
 def classify_tool_failure(tool_name: str, result: str | None) -> tuple[bool, str]:
     """判断工具调用是否失败。
 
-    借鉴 Hermes 的 _detect_tool_failure 逻辑，按工具类型做精确判断。
+    _detect_tool_failure 逻辑，按工具类型做精确判断。
     返回 (is_failure, failure_tag)。
     """
     if result is None:
@@ -225,7 +221,7 @@ class ToolCallGuardrailController:
     """精细化工具调用护栏控制器。
 
     每轮对话（per-turn）创建新实例，追踪该轮内的工具调用模式。
-    借鉴 Hermes 的 ToolCallGuardrailController，支持：
+    ToolCallGuardrailController，支持：
       - 精确失败追踪（相同参数+相同失败）
       - 同工具失败追踪（不同参数但同工具）
       - 无进展追踪（幂等工具返回相同结果）

@@ -1,4 +1,4 @@
-"""process 工具 —— 借鉴 Hermes 的 process 工具。
+"""process 工具。
 
 管理后台进程和委派子Agent：poll/wait/list/kill/log/monitor。
 
@@ -6,7 +6,7 @@
 1. ProcessRegistry: terminal(background=True) 创建的后台进程
 2. DelegateRegistry: delegate_task 创建的线程池子Agent
 
-借鉴 Hermes 的统一完成队列设计：
+统一完成队列设计：
   - 子Agent完成后结果自动注入对话上下文
   - 主Agent可随时查看子Agent日志和进度
   - 主Agent可终止卡住的子Agent

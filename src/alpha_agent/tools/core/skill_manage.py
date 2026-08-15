@@ -1,6 +1,6 @@
-﻿"""skill_manage 工具 —— 技能全生命周期管理（渐进式加载）。
+"""skill_manage 工具 —— 技能全生命周期管理（渐进式加载）。
 
-借鉴 Hermes 的 skills_tool + skill_manager_tool 设计：
+skills_tool + skill_manager_tool 设计：
   渐进式加载（Progressive Disclosure）:
     Tier 1: list/search → 只返回元数据 (name≤64, description≤1024)
     Tier 2: view → 加载完整技能内容
@@ -8,11 +8,6 @@
 
   生命周期管理:
     create/patch/edit/fork/retire/delete
-
-Hermes 参考：
-  - tools/skills_tool.py: skills_list + skill_view (渐进式加载)
-  - tools/skill_manager_tool.py: SKILL_MANAGE_SCHEMA
-  - agent/skill_utils.py: 技能目录管理
 """
 from typing import Optional
 from langchain_core.tools import tool
@@ -38,7 +33,7 @@ def skill_manage(
 ) -> str:
     """技能全生命周期管理工具（渐进式加载）。
 
-    借鉴 Hermes 的 skills_tool + skill_manager_tool 设计。
+    skills_tool + skill_manager_tool 设计。
 
     渐进式加载（Progressive Disclosure）:
       Tier 1: list/search → 只返回元数据 (name + description + category)，不返回完整内容

@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from sqlalchemy import JSON, Boolean, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -361,9 +361,9 @@ class StockFactor(Base, TimestampMixin):
 
 
 class AgentSkill(Base, TimestampMixin):
-    """Agent 技能表，借鉴 Hermes skill_manage，PG 驱动存储"""
+    """Agent 技能表，PG 驱动存储"""
     __tablename__ = "agent_skills"
-    __table_args__ = {"comment": "Agent 技能表，借鉴 Hermes skill_manage，PG 驱动存储"}
+    __table_args__ = {"comment": "Agent 技能表，PG 驱动存储"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键ID")
     name: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False, comment="技能唯一名称")
@@ -391,7 +391,7 @@ class AgentSkill(Base, TimestampMixin):
 
 
 class AgentMemory(Base, TimestampMixin):
-    """Agent 三层记忆表，借鉴 Hermes MEMORY.md/USER.md，PG 驱动"""
+    """Agent 三层记忆表，PG 驱动"""
     __tablename__ = "agent_memory"
     __table_args__ = {"comment": "Agent 三层记忆表：Frozen/Episodic/SkillRef"}
 

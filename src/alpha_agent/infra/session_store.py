@@ -1,8 +1,4 @@
-"""会话搜索 - 借鉴 Hermes 的 session_search_tool，用 PG tsvector 替代 SQLite FTS5。
-
-Hermes 参考:
-  - tools/session_search_tool.py: 三种模式 (DISCOVERY/SCROLL/BROWSE)
-  - SQLite FTS5 全文搜索索引
+"""会话搜索 - session_search_tool 设计，用 PG tsvector 替代 SQLite FTS5。
 
 PG 优势:
   - tsvector 全文搜索比 SQLite FTS5 更强大
@@ -25,7 +21,7 @@ from alpha_agent.utils.logger import logger
 class SessionStore:
     """PG 驱动的会话搜索与存储。
 
-    三种搜索模式（借鉴 Hermes）:
+    三种搜索模式:
     - DISCOVERY: 全文搜索，返回匹配的会话片段
     - SCROLL: 按会话 ID + 消息 ID 浏览消息窗口
     - BROWSE: 最近会话时间线

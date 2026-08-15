@@ -1,16 +1,11 @@
 """delegate_task 工具 —— 动态创建子 Agent，加载 Profile，支持后台模式。
 
-借鉴 Hermes 的 delegate_tool.py 设计：
+delegate_tool.py 设计：
   - 单任务委派：delegate_task(goal="...", profile="...")
   - 多任务派发（fan-out）：delegate_task(tasks=[...])
   - 后台执行：子 Agent 在线程池中运行，主 Agent 不阻塞
   - 深度限制：子 Agent 不可再 delegate（防无限递归）
   - 受限工具：子 Agent 只加载 Profile 指定的工具，不含 delegate_task
-
-Hermes 参考：
-  - tools/delegate_tool.py: delegate_task schema + handler
-  - tools/async_delegation.py: 后台线程池管理
-  - 子Agent在同进程内运行（AIAgent实例），不是子进程
 
 核心架构变更（vs 旧版）：
   - 旧版：子Agent作为子进程运行（python script.py），通过ProcessRegistry监控
@@ -288,7 +283,7 @@ def delegate_task(
 ) -> str:
     """动态创建专业子 Agent，加载 Profile 完成特定任务。
 
-    借鉴 Hermes 的 delegate_task，支持单任务委派和多任务并发派发（fan-out）。
+    delegate_task，支持单任务委派和多任务并发派发（fan-out）。
 
     何时使用：
     - 任务需要专业领域的深入分析（如基本面分析、技术面分析）→ 指定 profile

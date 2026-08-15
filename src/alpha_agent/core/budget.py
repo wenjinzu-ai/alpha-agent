@@ -1,8 +1,4 @@
-"""Token 预算管理 - 借鉴 Hermes 的 iteration_budget 和 tool_result_storage。
-
-Hermes 参考:
-  - agent/iteration_budget.py: 迭代预算，超预算自动停止
-  - tools/tool_result_storage.py: 工具结果按字符数截断，防止撑爆上下文
+"""Token 预算管理 - iteration_budget 和 tool_result_storage 设计。
 
 PG 优势:
   - 预算使用记录持久化到 PG，用于分析优化
@@ -32,7 +28,7 @@ DEFAULT_BUDGET = BudgetConfig()
 class IterationBudget:
     """迭代预算追踪器。
 
-    借鉴 Hermes 的 IterationBudget:
+    IterationBudget 设计:
     - 每轮 API 调用递增计数
     - 超预算自动停止并给出提示
     - 支持预算耗尽后的优雅降级
@@ -115,7 +111,7 @@ class IterationBudget:
 def truncate_tool_result(content: str, max_chars: int = DEFAULT_BUDGET.max_tool_result_chars) -> str:
     """截断工具结果，防止撑爆上下文窗口。
 
-    借鉴 Hermes 的 tool_result_storage:
+    tool_result_storage:
     - 按字符数而非 token 数截断（模型无关）
     - 保留开头和结尾，中间截断
     - 截断时给出明确的截断提示
@@ -151,7 +147,7 @@ def truncate_tool_result(content: str, max_chars: int = DEFAULT_BUDGET.max_tool_
 def budget_for_context_window(context_length: int) -> BudgetConfig:
     """根据上下文窗口大小计算合适的预算配置。
 
-    借鉴 Hermes 的 budget_for_context_window:
+    budget_for_context_window:
     - 大窗口模型使用宽松预算
     - 小窗口模型使用紧缩预算
     """

@@ -1,17 +1,12 @@
-﻿"""Memory Store —— PG 驱动的三层记忆读写。
+"""Memory Store —— PG 驱动的三层记忆读写。
 
-借鉴 Hermes 的 memory_tool.py 和 memory_provider.py 设计，
+memory_tool.py 和 memory_provider.py 设计，
 但用 PostgreSQL 替代 Markdown 文件，支持结构化查询和标签检索。
 
 三层记忆模型：
   1. Frozen Memory  - 持久的用户画像、偏好、知识
   2. Episodic Memory - 会话级经验片段（自动过期/归档）
   3. SkillRef Memory  - 成功使用的 Skill 引用
-
-Hermes 参考：
-  - tools/memory_tool.py: memory(action=add/delete/replace/consolidate/view)
-  - agent/memory_provider.py: MemoryProvider 抽象接口
-  - agent/memory_manager.py: 记忆管理逻辑
 """
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional

@@ -1,4 +1,4 @@
-﻿"""terminal 工具 —— 借鉴 Hermes 的 terminal 工具。
+"""terminal 工具。
 
 支持前台/后台执行任意 Shell 命令。
 前台模式：阻塞直到命令完成，返回输出。

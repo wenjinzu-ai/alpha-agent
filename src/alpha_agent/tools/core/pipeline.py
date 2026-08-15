@@ -1,6 +1,6 @@
-﻿"""execute_pipeline 工具 —— 一步执行预置分析工作流。
+"""execute_pipeline 工具 —— 一步执行预置分析工作流。
 
-专业 Agent 的核心差异化：Hermes 没有领域 Pipeline，我们有。
+专业 Agent 的核心差异化：没有领域 Pipeline，我们有。
 后台模式走 ProcessRegistry，与 terminal 一致，可用 process 工具查询。
 """
 from typing import Optional

@@ -1,6 +1,6 @@
-﻿"""预置投资领域 Skill —— 10+ 个核心 Skill。
+"""预置投资领域 Skill —— 10+ 个核心 Skill。
 
-借鉴 Hermes 的 SKILL.md 格式，但用 PG 驱动。
+SKILL.md 格式存储，PG 驱动。
 这些 Skill 在 Agent 首次启动时自动创建，让 Agent 启动即懂业务。
 """
 from alpha_agent.infra.skill_store import skill_store

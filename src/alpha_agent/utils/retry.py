@@ -1,8 +1,4 @@
-"""错误处理与重试 - 借鉴 Hermes 的 error_classifier 和 retry_utils。
-
-Hermes 参考:
-  - agent/error_classifier.py: 错误分类 + FailoverReason
-  - agent/retry_utils.py: 自适应退避 + jittered_backoff
+"""错误处理与重试 - error_classifier 和 retry_utils 设计。
 
 纯 Python 实现，不依赖外部服务。
 """
@@ -17,7 +13,7 @@ from alpha_agent.utils.logger import logger
 
 
 class FailoverReason(Enum):
-    """错误分类，借鉴 Hermes 的 FailoverReason。"""
+    """错误分类，FailoverReason。"""
     RATE_LIMIT = "rate_limit"
     CONTEXT_OVERFLOW = "context_overflow"
     OUTPUT_CAP = "output_cap"
@@ -58,7 +54,7 @@ ERROR_PATTERNS = {
 def classify_error(error: Exception) -> FailoverReason:
     """分类 API 错误，返回 FailoverReason。
 
-    借鉴 Hermes 的 classify_api_error。
+    classify_api_error。
     """
     error_str = str(error).lower()
 
@@ -79,7 +75,7 @@ def classify_error(error: Exception) -> FailoverReason:
 
 
 def jittered_backoff(base_delay: float = 1.0, max_delay: float = 60.0) -> float:
-    """抖动退避，借鉴 Hermes 的 jittered_backoff。
+    """抖动退避，jittered_backoff。
 
     返回带随机抖动的退避时间。
     """
@@ -92,7 +88,7 @@ def adaptive_rate_limit_backoff(
     base_delay: float = 1.0,
     max_delay: float = 120.0,
 ) -> float:
-    """自适应速率限制退避，借鉴 Hermes 的 adaptive_rate_limit_backoff。
+    """自适应速率限制退避，adaptive_rate_limit_backoff。
 
     指数退避 + 随机抖动。
     """
@@ -112,7 +108,7 @@ def retry(
         FailoverReason.PROVIDER_ERROR,
     ),
 ):
-    """重试装饰器，借鉴 Hermes 的错误处理策略。
+    """重试装饰器，错误处理策略。
 
     Args:
         max_attempts: 最大重试次数
