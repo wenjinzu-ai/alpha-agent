@@ -18,7 +18,7 @@ from alpha_agent.utils.logger import logger
 @dataclass
 class BudgetConfig:
     """预算配置。"""
-    max_iterations: int = 30
+    max_iterations: int = 60
     max_tool_result_chars: int = 100000
     max_tool_result_chars_small_model: int = 30000
     context_window: int = 128000
@@ -36,11 +36,19 @@ class IterationBudget:
     - 每轮 API 调用递增计数
     - 超预算自动停止并给出提示
     - 支持预算耗尽后的优雅降级
+
+    目标导向增强:
+    - extend(): 检测到有进展时智能续期
+    - can_extend(): 检查最近步骤是否有新工具调用（有进展）
+    - _recent_tool_names: 追踪最近调用的工具名，用于判断是否在死循环
     """
     max_iterations: int
     current: int = 0
     _exhausted: bool = False
     _warning_issued: bool = False
+    _extend_count: int = 0
+    _max_extends: int = 3
+    _recent_tool_names: list = field(default_factory=list)
 
     def increment(self) -> bool:
         self.current += 1
@@ -51,6 +59,37 @@ class IterationBudget:
                     f"[Budget] 迭代预算耗尽 ({self.current}/{self.max_iterations})"
                 )
             return False
+        return True
+
+    def record_tool_call(self, tool_name: str) -> None:
+        self._recent_tool_names.append(tool_name)
+        if len(self._recent_tool_names) > 10:
+            self._recent_tool_names = self._recent_tool_names[-10:]
+
+    def can_extend(self) -> bool:
+        if self._extend_count >= self._max_extends:
+            return False
+        recent = self._recent_tool_names[-5:] if len(self._recent_tool_names) >= 5 else self._recent_tool_names
+        if len(recent) < 3:
+            return True
+        unique_recent = set(recent)
+        if len(unique_recent) >= 2:
+            return True
+        return False
+
+    def extend(self, extra_steps: int = 10) -> bool:
+        if not self.can_extend():
+            logger.info(
+                f"[Budget] 无法续期: 最近 {min(5, len(self._recent_tool_names))} 步无新工具调用"
+            )
+            return False
+        self.max_iterations += extra_steps
+        self._exhausted = False
+        self._extend_count += 1
+        logger.info(
+            f"[Budget] 智能续期 +{extra_steps} 步 "
+            f"(新上限: {self.max_iterations}, 续期次数: {self._extend_count}/{self._max_extends})"
+        )
         return True
 
     @property

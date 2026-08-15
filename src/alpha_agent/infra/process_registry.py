@@ -18,6 +18,10 @@ from enum import Enum
 
 from alpha_agent.utils.logger import logger
 
+MAX_TASK_AGE_SECONDS = 600
+MAX_TASKS = 50
+STUCK_THRESHOLD_SECONDS = 120
+
 
 class TaskStatus(str, Enum):
     PENDING = "pending"
@@ -94,6 +98,35 @@ class ProcessRegistry:
     def _generate_task_id(self) -> str:
         return f"task_{uuid.uuid4().hex[:8]}"
 
+    def _cleanup_old_tasks(self):
+        now = time.time()
+        with self._lock:
+            to_remove = []
+            for task_id, task in self._tasks.items():
+                if task.status in (
+                    TaskStatus.COMPLETED, TaskStatus.FAILED,
+                    TaskStatus.KILLED, TaskStatus.TIMEOUT
+                ):
+                    if task.finished_at and (now - task.finished_at) > MAX_TASK_AGE_SECONDS:
+                        to_remove.append(task_id)
+            for task_id in to_remove:
+                del self._tasks[task_id]
+            if to_remove:
+                logger.info(f"[ProcessRegistry] 清理了 {len(to_remove)} 个过期任务")
+
+            if len(self._tasks) > MAX_TASKS:
+                finished = sorted(
+                    [(tid, t) for tid, t in self._tasks.items()
+                     if t.status in (TaskStatus.COMPLETED, TaskStatus.FAILED,
+                                     TaskStatus.KILLED, TaskStatus.TIMEOUT)],
+                    key=lambda x: x[1].finished_at or 0
+                )
+                to_drop = finished[:len(self._tasks) - MAX_TASKS]
+                for tid, _ in to_drop:
+                    del self._tasks[tid]
+                if to_drop:
+                    logger.info(f"[ProcessRegistry] 任务数超限，清理了 {len(to_drop)} 个旧任务")
+
     def start(
         self,
         command: str,
@@ -101,6 +134,7 @@ class ProcessRegistry:
         timeout: int = 180,
         workdir: Optional[str] = None,
     ) -> Dict[str, Any]:
+        self._cleanup_old_tasks()
         task_id = self._generate_task_id()
         task = TaskInfo(
             task_id=task_id,
@@ -314,6 +348,7 @@ class ProcessRegistry:
             logger.error(f"[ProcessRegistry] 终止任务失败 {task_id}: {e}")
 
     def poll(self, task_id: str) -> Dict[str, Any]:
+        self._cleanup_old_tasks()
         task = self._tasks.get(task_id)
         if not task:
             return {"task_id": task_id, "status": "not_found", "error": f"任务 {task_id} 不存在"}
@@ -421,6 +456,43 @@ class ProcessRegistry:
 
     def get_task(self, task_id: str) -> Optional[TaskInfo]:
         return self._tasks.get(task_id)
+
+    def check_stuck_tasks(self) -> list[dict]:
+        """检测可能卡住的后台任务（运行中但长时间无新输出）。
+
+        Returns:
+            卡住任务列表，每项包含 task_id, elapsed, last_output_age
+        """
+        stuck = []
+        now = time.time()
+        with self._lock:
+            for task_id, task in self._tasks.items():
+                if task.status != TaskStatus.RUNNING:
+                    continue
+                if not task.started_at:
+                    continue
+                elapsed = now - task.started_at
+                if elapsed < STUCK_THRESHOLD_SECONDS:
+                    continue
+                with task._lock:
+                    last_stdout_time = 0.0
+                    if task.stdout_lines:
+                        pass
+                    has_recent_output = len(task.stdout_lines) > task._stdout_pos
+                if not has_recent_output and elapsed > STUCK_THRESHOLD_SECONDS:
+                    stuck.append({
+                        "task_id": task_id,
+                        "elapsed": round(elapsed, 1),
+                        "command": task.command[:80],
+                        "status": "possibly_stuck",
+                        "message": (
+                            f"任务 {task_id} 已运行 {round(elapsed, 1)}s，"
+                            f"可能卡住（超过 {STUCK_THRESHOLD_SECONDS}s 无新输出）。"
+                            f"可使用 process(action='kill', task_id='{task_id}') 终止，"
+                            f"或 process(action='log', task_id='{task_id}') 查看日志。"
+                        ),
+                    })
+        return stuck
 
 
 _registry: Optional[ProcessRegistry] = None

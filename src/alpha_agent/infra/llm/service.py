@@ -42,6 +42,7 @@ class LLMService:
                 temperature=settings.llm_temperature,
                 timeout=120,
                 max_tokens=4096,
+                max_retries=3,
             )
             self._enabled = True
             logger.info(f"LLM 初始化完成: provider={settings.llm_provider}, model={settings.llm_model}")

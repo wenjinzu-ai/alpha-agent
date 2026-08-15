@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0a0a;
+  --color-primary: #171717;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #171717;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #171717;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #171717;
+  --color-sidebar: #fafafa;
+  --color-sidebar-foreground: #171717;
+  --color-sidebar-border: #e5e5e5;
+  --color-sidebar-accent: #f0f0f0;
+  --color-sidebar-accent-foreground: #171717;
+  --color-bubble-user: #2563eb;
+  --color-bubble-user-foreground: #ffffff;
+  --color-bubble-assistant: #f5f5f5;
+  --color-bubble-assistant-foreground: #171717;
+
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+}
+
+.dark {
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-card: #0a0a0a;
+  --color-card-foreground: #fafafa;
+  --color-popover: #0a0a0a;
+  --color-popover-foreground: #fafafa;
+  --color-primary: #fafafa;
+  --color-primary-foreground: #171717;
+  --color-secondary: #171717;
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #262626;
+  --color-muted-foreground: #a3a3a3;
+  --color-accent: #171717;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #7f1d1d;
+  --color-destructive-foreground: #fafafa;
+  --color-border: #262626;
+  --color-input: #262626;
+  --color-ring: #d4d4d4;
+  --color-sidebar: #111111;
+  --color-sidebar-foreground: #fafafa;
+  --color-sidebar-border: #262626;
+  --color-sidebar-accent: #1f1f1f;
+  --color-sidebar-accent-foreground: #fafafa;
+  --color-bubble-user: #2563eb;
+  --color-bubble-user-foreground: #ffffff;
+  --color-bubble-assistant: #1f1f1f;
+  --color-bubble-assistant-foreground: #fafafa;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+.prose pre {
+  background-color: var(--color-muted);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.prose p {
+  margin: 0.5rem 0;
+}
+
+.prose ul, .prose ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.prose li {
+  margin: 0.25rem 0;
+}

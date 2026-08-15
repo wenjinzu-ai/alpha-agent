@@ -1,4 +1,4 @@
-﻿"""Pipeline 注册表 —— 管理所有已注册的 Pipeline。"""
+"""Pipeline 注册表 —— 管理所有已注册的 Pipeline。"""
 from typing import Dict, Optional, List, Any
 from alpha_agent.pipeline.base import Pipeline
 from alpha_agent.utils.logger import logger
@@ -83,6 +83,7 @@ def _register_default_pipelines(registry: PipelineRegistry):
     from alpha_agent.pipeline.factor_backtest import register as reg_fb
     from alpha_agent.pipeline.portfolio_build import register as reg_pb
     from alpha_agent.pipeline.data_auto_repair import register as reg_dar
+    from alpha_agent.pipeline.review_analysis import register as reg_ra
 
     reg_sa(registry)
     reg_mo(registry)
@@ -91,5 +92,6 @@ def _register_default_pipelines(registry: PipelineRegistry):
     reg_fb(registry)
     reg_pb(registry)
     reg_dar(registry)
+    reg_ra(registry)
 
     logger.info(f"[PipelineRegistry] 默认 Pipeline 注册完成，共 {len(registry.list_pipelines())} 个")

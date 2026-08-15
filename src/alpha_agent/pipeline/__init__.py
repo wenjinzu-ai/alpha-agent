@@ -1,4 +1,4 @@
-﻿"""Pipeline 模块 —— 可组合的分析步骤编排。
+"""Pipeline 模块 —— 可组合的分析步骤编排。
 
 Pipelines:
   - stock_analysis: 个股综合分析
@@ -8,6 +8,7 @@ Pipelines:
   - factor_backtest: 因子回测 Pipeline
   - portfolio_build: 组合构建 Pipeline
   - data_auto_repair: 数据自动修复 Pipeline
+  - review_analysis: 投资复盘分析 Pipeline
 
 Utilities:
   - db_utils: 统一的 DB 会话管理，消除 Pipeline 步骤中的重复代码

@@ -88,6 +88,7 @@ def _make_help() -> Panel:
     cmd_table.add_row("/help, /h", "显示帮助")
     cmd_table.add_row("/clear, /c", "清空对话历史")
     cmd_table.add_row("/tasks", "查看后台任务")
+    cmd_table.add_row("/delegate", "查看委派任务详情和日志")
     cmd_table.add_row("/exit, /quit, /q", "退出")
 
     title = Text("内置命令", style="bold cyan underline")
@@ -172,7 +173,12 @@ def _run_interactive():
                 console.print(_make_help())
                 continue
             if user_input in ("/clear", "/c"):
+                old_session_id = session_id
                 session_id = str(uuid.uuid4())
+                try:
+                    agent_loop._builder.cleanup_old_checkpoints(old_session_id)
+                except Exception:
+                    pass
                 console.print(Panel(
                     f"已清空对话历史，新会话: [bold green]{session_id[:8]}[/bold green]",
                     border_style="blue",
@@ -180,6 +186,9 @@ def _run_interactive():
                 continue
             if user_input == "/tasks":
                 _show_tasks()
+                continue
+            if user_input == "/delegate":
+                _show_delegate_monitor()
                 continue
             console.print(f"[yellow]未知命令: {user_input}，输入 /help 查看帮助[/yellow]")
             continue
@@ -195,6 +204,7 @@ def _run_interactive():
                 error_detail = f"{type(e).__name__}: {e}"
             logger.error(f"对话处理失败: {error_detail}\n{traceback.format_exc()}")
             console.print(Panel(f"抱歉，处理你的问题时出错了: {error_detail}", border_style="red"))
+        _show_running_tasks_mini()
         console.print()
         console.print()
 
@@ -356,6 +366,132 @@ def _show_tasks():
         )
 
     console.print(table)
+
+
+def _show_running_tasks_mini():
+    """在对话间隙显示运行中的后台任务（紧凑模式）。"""
+    from alpha_agent.infra.process_registry import get_process_registry
+
+    registry = get_process_registry()
+    result = registry.list_tasks()
+
+    running_tasks = [t for t in result.get("tasks", []) if t.get("status") == "running"]
+    if not running_tasks:
+        return
+
+    lines = []
+    for t in running_tasks:
+        tid = t.get("task_id", "")[:12]
+        cmd = (t.get("command", "") or "")[:50]
+        elapsed = t.get("elapsed", 0)
+        lines.append(
+            f"  🔄 [bold yellow]{tid}[/bold yellow] "
+            f"[dim]运行中 {elapsed}s[/dim]  "
+            f"[white]{cmd}[/white]"
+        )
+
+    panel = Panel(
+        "\n".join(lines),
+        title=f"[bold yellow]后台任务 ({len(running_tasks)} 个运行中)[/bold yellow]",
+        border_style="yellow",
+        box=box.SIMPLE,
+        padding=(0, 2),
+    )
+    console.print(panel)
+
+
+def _show_delegate_monitor():
+    """显示委派任务监控面板，包含进度、日志和干预选项。"""
+    from alpha_agent.infra.process_registry import get_process_registry
+
+    registry = get_process_registry()
+    result = registry.list_tasks()
+    tasks = result.get("tasks", [])
+    total = result.get("total", 0)
+    running = result.get("running", 0)
+
+    delegate_tasks = [t for t in tasks if "delegate" in t.get("command", "")]
+    if not delegate_tasks:
+        console.print(Panel("当前没有委派任务", border_style="yellow"))
+        return
+
+    completed = [t for t in delegate_tasks if t.get("status") == "completed"]
+    failed = [t for t in delegate_tasks if t.get("status") in ("failed", "timeout", "killed")]
+    running_dt = [t for t in delegate_tasks if t.get("status") == "running"]
+
+    summary = (
+        f"[bold]委派任务监控[/bold]\n"
+        f"总计: {len(delegate_tasks)} | "
+        f"运行中: [yellow]{len(running_dt)}[/yellow] | "
+        f"已完成: [green]{len(completed)}[/green] | "
+        f"失败: [red]{len(failed)}[/red]"
+    )
+    console.print(Panel(summary, border_style="cyan", box=box.SIMPLE))
+
+    for t in delegate_tasks:
+        tid = t.get("task_id", "")
+        st = t.get("status", "")
+        elapsed = t.get("elapsed", 0)
+        cmd = t.get("command", "")
+
+        profile_hint = ""
+        if "fundamental" in cmd:
+            profile_hint = "📊 基本面分析"
+        elif "technical" in cmd:
+            profile_hint = "📈 技术面分析"
+        elif "risk" in cmd:
+            profile_hint = "🛡️ 风险控制"
+        elif "data_engineer" in cmd:
+            profile_hint = "🔧 数据工程"
+        elif "backtest" in cmd:
+            profile_hint = "🔄 回测工程"
+
+        status_emoji = {
+            "running": "🔄", "completed": "✅",
+            "failed": "❌", "killed": "🛑", "timeout": "⏰",
+        }.get(st, "⏳")
+
+        console.print(f"\n  {status_emoji} [bold]{tid}[/bold] [{st}] {elapsed}s {profile_hint}")
+
+        if st == "running":
+            log_result = registry.log(tid, tail=8)
+            stdout = log_result.get("stdout", "").strip()
+            if stdout:
+                for line in stdout.splitlines()[-5:]:
+                    console.print(f"    [dim]┆ {line[:100]}[/dim]")
+            else:
+                console.print(f"    [dim]┆ （暂无输出）[/dim]")
+
+            console.print(
+                f"    [dim]干预: process(action='poll/log/kill', task_id='{tid}')[/dim]"
+            )
+
+        elif st == "failed":
+            log_result = registry.log(tid, tail=8)
+            stderr = log_result.get("stderr", "").strip()
+            if stderr:
+                for line in stderr.splitlines()[-3:]:
+                    console.print(f"    [red]┆ ❗ {line[:100]}[/red]")
+
+        elif st == "completed":
+            log_result = registry.log(tid, tail=5)
+            stdout = log_result.get("stdout", "").strip()
+            result_marker = "---RESULT---"
+            if result_marker in stdout:
+                result_text = stdout.split(result_marker)[-1].strip()
+                if result_text:
+                    preview = result_text[:200]
+                    console.print(f"    [green]┆ 结果: {preview}[/green]")
+
+    stuck = registry.check_stuck_tasks()
+    if stuck:
+        console.print()
+        console.print("[bold red]⚠️ 可能卡住的任务:[/bold red]")
+        for s in stuck:
+            console.print(
+                f"  ⚠️ {s['task_id']} 已运行 {s['elapsed']}s - "
+                f"[dim]可 kill 终止[/dim]"
+            )
 
 
 def main():

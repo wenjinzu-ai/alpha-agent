@@ -14,7 +14,6 @@ class HealthResponse(BaseModel):
 class ChatRequest(BaseModel):
     thread_id: str = Field("default", description="会话ID，用于保持上下文")
     message: str = Field(..., description="用户消息")
-    mode: Literal["react", "multi_agent"] = Field("multi_agent", description="执行模式：react=单Agent快速交互, multi_agent=多Agent协作分析")
 
 
 class ChatResponse(BaseModel):

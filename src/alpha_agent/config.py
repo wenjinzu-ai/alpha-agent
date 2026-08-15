@@ -1,14 +1,19 @@
 ﻿
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 __version__ = "0.3.0"
 
+_DOTENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_DOTENV_PATH if _DOTENV_PATH.exists() else ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     app_name: str = "Investment Agent"
@@ -19,7 +24,7 @@ class Settings(BaseSettings):
     postgres_port: int = 5433
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"
-    postgres_db: str = "alpha_agent"
+    postgres_db: str = "investment_agent"
 
     redis_host: str = "localhost"
     redis_port: int = 6379
@@ -44,7 +49,7 @@ class Settings(BaseSettings):
 
     default_analysis_timeout: int = 60
 
-    agent_max_steps: int = 30
+    agent_max_steps: int = 60
     terminal_default_timeout: int = 180
     execute_code_default_timeout: int = 300
     pipeline_background_timeout: int = 600

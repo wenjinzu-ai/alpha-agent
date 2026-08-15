@@ -109,7 +109,7 @@ DANGEROUS_PATTERNS: list[tuple[str, str]] = [
     (r'\bALTER\s+TABLE\b', "ALTER TABLE"),
     (r'\bTRUNCATE\b', "TRUNCATE 清空表"),
     (r'清仓|全部卖出|全部清仓|all\s*(out|sell)', "清仓操作"),
-    (r'杠杆|融资|margin|lending', "杠杆/融资操作"),
+    (r'(?:使用|进行|开启|申请|操作).*(?:杠杆|融资|margin|lending)', "杠杆/融资操作"),
     (r'修改.*风控|变更.*阈值|调整.*限额', "修改风控参数"),
     (r'prod.*(?:连接|数据库|database)|production.*(?:连接|connect)', "生产环境连接"),
 ]

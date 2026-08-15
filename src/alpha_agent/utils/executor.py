@@ -27,14 +27,14 @@ def write_temp_script(script_code: str, prefix: str = "exec") -> str:
 def run_script_background(
     script_path: str,
     timeout: int = 300,
-    cleanup: bool = True,
+    cleanup: bool = False,
 ) -> str:
     """后台执行 Python 脚本，返回 task_id。
 
     Args:
         script_path: 临时脚本路径
         timeout: 超时秒数
-        cleanup: 是否在任务完成后清理临时文件
+        cleanup: 是否在任务完成后清理临时文件（默认 False，避免竞态条件）
 
     Returns:
         task_id 字符串

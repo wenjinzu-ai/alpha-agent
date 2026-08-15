@@ -34,6 +34,8 @@ HISTORICAL_RESOLVED_HEADING = "## 已解决问题"
 DEFAULT_CONTEXT_LENGTH = 128000
 MIN_CONTEXT_LENGTH = 4096
 
+MAX_SUMMARY_CHARS = 8000
+
 
 def _estimate_tokens(text: str) -> int:
     """粗略估算 token 数（中文约 1.5 字符/token，英文约 4 字符/token）。"""
@@ -214,10 +216,27 @@ class ContextCompressor(ContextEngine):
 
         middle_text = _extract_summary_from_messages(middle, 0, len(middle))
 
+        middle_text_raw = middle_text
+
         if self._iterative_summary:
             middle_text = (
                 f"## 之前的摘要\n{self._iterative_summary}\n\n"
                 f"## 新增内容\n{middle_text}"
+            )
+
+        if len(middle_text) > MAX_SUMMARY_CHARS:
+            new_content = f"## 新增内容\n{middle_text_raw}"
+            old_summary = self._iterative_summary or ""
+            available = MAX_SUMMARY_CHARS - len(new_content) - 100
+            if available > 500:
+                middle_text = (
+                    f"## 之前的摘要（截断，保留最近部分）\n{old_summary[-available:]}\n\n"
+                    f"{new_content}"
+                )
+            else:
+                middle_text = middle_text[-MAX_SUMMARY_CHARS:]
+            logger.info(
+                f"[ContextCompressor] 摘要截断: {len(self._iterative_summary or '')} -> {available} 字符"
             )
 
         structured = _classify_summary_content(middle_text)

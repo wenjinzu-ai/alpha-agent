@@ -45,6 +45,7 @@ IDEMPOTENT_TOOL_NAMES = frozenset({
     "get_comparison",
     "get_insight",
     "get_knowledge_graph",
+    "process",
 })
 
 MUTATING_TOOL_NAMES = frozenset({
@@ -53,7 +54,6 @@ MUTATING_TOOL_NAMES = frozenset({
     "execute_pipeline",
     "skill_manage",
     "delegate_task",
-    "process",
     "backtest",
     "factor_backtest",
     "screener",
@@ -251,6 +251,10 @@ class ToolCallGuardrailController:
 
     def is_tool_blocked(self, tool_name: str) -> bool:
         if self._halt_decision is not None:
+            if self._halt_decision.tool_name == tool_name:
+                return True
+            if tool_name in ("process",):
+                return False
             return True
         return False
 
